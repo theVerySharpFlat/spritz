@@ -1,4 +1,4 @@
 project(spritz)
 
-add_subdirectory(src)
-add_subdirectory(testBench)
+add_subdirectory(spritz)
+add_subdirectory(sandbox)
