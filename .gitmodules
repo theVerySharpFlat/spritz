@@ -1,0 +1,3 @@
+[submodule "spritz/third_party/glfw"]
+	path = spritz/third_party/glfw
+	url = https://github.com/glfw/glfw.git
