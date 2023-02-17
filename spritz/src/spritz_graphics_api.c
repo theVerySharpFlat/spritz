@@ -1,7 +1,7 @@
-#include "spritz_graphics_api.h"
+#include "spritz_graphics_api_internal.h"
 
 #include "spritz_graphics_api_gl.h"
 
-SpritzGraphicsAPIInternal_t spritzLoadGraphicsAPI(SpritzGraphicsAPIInitInfo_t initInfo) {
+SpritzGraphicsAPIInternal_t spritzLoadGraphicsAPI(SpritzGraphicsAPIID_t preference) {
     return spritzGraphicsAPIGLLoad();
 }

@@ -1,6 +1,5 @@
 #include "spritz_graphics_api_gl.h"
 #include "spritz_graphics_api.h"
-#include <OpenGL/OpenGL.h>
 #include <stdio.h>
 
 #define GLFW_INCLUDE_NONE

@@ -1,17 +1,13 @@
-#ifndef SPRITZ_GRAPHICS_API_H
-#define SPRITZ_GRAPHICS_API_H
+#ifndef SPRITZ_GRAPHICS_API_INTERNAL_H
+#define SPRITZ_GRAPHICS_API_INTERNAL_H
 
+#include "spritz_graphics_api.h"
 #include "spritz_window.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-enum SpritzGraphicsAPIID {
-    SpritzGraphicsAPIGL = 0
-};
-typedef enum SpritzGraphicsAPIID SpritzGraphicsAPIID_t;
 
 struct SpritzGraphicsAPIInitInfo {
-    SpritzGraphicsAPIID_t graphicsAPIPreference;
     uint32_t nQuadsPerBatch;
 
     SpritzWindow_t window;
@@ -38,6 +34,6 @@ struct SpritzGraphicsAPI  {
 };
 typedef struct SpritzGraphicsAPI SpritzGraphicsAPIInternal_t;
 
-SpritzGraphicsAPIInternal_t spritzLoadGraphicsAPI(SpritzGraphicsAPIInitInfo_t initInfo);
+SpritzGraphicsAPIInternal_t spritzLoadGraphicsAPI(SpritzGraphicsAPIID_t preference);
 
 #endif

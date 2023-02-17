@@ -1,7 +1,7 @@
 #ifndef SPRITZ_GRAPHICS_API_GL_H
 #define SPRITZ_GRAPHICS_API_GL_H
 
-#include "spritz_graphics_api.h"
+#include "spritz_graphics_api_internal.h"
 
 bool spritzGraphicsAPIGLPreWindowSystemInit(SpritzGraphicsAPIInitInfo_t info);
 bool spritzGraphicsAPIGLInit(SpritzGraphicsAPIInitInfo_t info);

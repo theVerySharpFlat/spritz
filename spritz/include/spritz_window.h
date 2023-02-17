@@ -12,7 +12,7 @@ void spritzDestroyWindow(SpritzWindow_t* window);
 
 bool spritzWindowShouldClose(SpritzWindow_t window);
 
-bool spritzIsKeyPressed(SpritzWindow_t window, int32_t key);
+bool spritzWindowIsKeyPressed(SpritzWindow_t window, int32_t key);
 
 void spritzUpdateWindows(void);
 

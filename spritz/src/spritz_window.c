@@ -43,7 +43,7 @@ bool spritzWindowShouldClose(SpritzWindow_t window) {
     return (bool)glfwWindowShouldClose(window->window);
 }
 
-bool spritzIsKeyPressed(SpritzWindow_t window, int32_t key) {
+bool spritzWindowIsKeyPressed(SpritzWindow_t window, int32_t key) {
     int32_t state = glfwGetKey(window->window, key);
     return state == GLFW_REPEAT || state == GLFW_PRESS;
 }

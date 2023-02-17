@@ -7,7 +7,7 @@ int main() {
     SpritzWindow_t window = spritzCreateWindow(680, 420, "Spritz!");
 
     while(!spritzWindowShouldClose(window)) {
-        if(spritzIsKeyPressed(window, SPRITZ_KEY_Q)) {
+        if(spritzWindowIsKeyPressed(window, SPRITZ_KEY_Q)) {
             printf("Q was pressed!\n");
         } else {
             printf("Q was not pressed!\n");
