@@ -11,6 +11,6 @@ inline bool spritzGraphicsAPIGLShutdown() { return true; };
 bool spritzGraphicsAPIGLClear();
 bool spritzGraphicsAPIGLSetClearColor(float r, float g, float b, float a);
 
-SpritzGraphicsAPI_t spritzGraphicsAPIGLLoad();
+SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad();
 
 #endif

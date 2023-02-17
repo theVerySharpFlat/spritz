@@ -86,8 +86,8 @@ bool spritzGraphicsAPIGLSetClearColor(float r, float g, float b, float a) {
     return true;
 }
 
-SpritzGraphicsAPI_t spritzGraphicsAPIGLLoad() {
-    SpritzGraphicsAPI_t api = {};
+SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
+    SpritzGraphicsAPIInternal_t api = {};
     api.PFN_init = spritzGraphicsAPIGLInit;
     api.PFN_preInit = spritzGraphicsAPIGLPreWindowSystemInit;
     api.PFN_clear = spritzGraphicsAPIGLClear;

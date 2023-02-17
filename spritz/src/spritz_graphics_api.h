@@ -36,8 +36,8 @@ struct SpritzGraphicsAPI  {
 
     void* internalData;
 };
-typedef struct SpritzGraphicsAPI SpritzGraphicsAPI_t;
+typedef struct SpritzGraphicsAPI SpritzGraphicsAPIInternal_t;
 
-SpritzGraphicsAPI_t spritzLoadGraphicsAPI(SpritzGraphicsAPIInitInfo_t initInfo);
+SpritzGraphicsAPIInternal_t spritzLoadGraphicsAPI(SpritzGraphicsAPIInitInfo_t initInfo);
 
 #endif
