@@ -1,18 +1,29 @@
+#include "spritz/renderer.h"
 #include <stdio.h>
 
-#include <spritz.h>
-#include <spritz_window.h>
+#include <spritz/spritz.h>
+#include <spritz/window.h>
 
 int main() {
-    SpritzWindow_t window = spritzCreateWindow(680, 420, "Spritz!");
+    SpritzWindow_t window =
+        spritzWindowCreate(680, 420, "Spritz!", SpritzGraphicsAPIGL);
 
-    while(!spritzWindowShouldClose(window)) {
-        if(spritzWindowIsKeyPressed(window, SPRITZ_KEY_Q)) {
-            printf("Q was pressed!\n");
-        } else {
-            printf("Q was not pressed!\n");
-        }
+    SpritzRendererQuadInfo_t quadInfo= {
+        NULL,
+        -0.5f, 0.5f, 0.5f, -0.5f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 1.0f,
+        1.0f
+    };
 
+    while (!spritzWindowShouldClose(window)) {
+        spritzWindowSetClearColor(window, 1.0f, 0.0f, 0.0f, 1.0f);
+        spritzWindowClear(window);
+
+        spritzQueueQuad(window, quadInfo);
+        spritzFlush(window);
+
+        spritzWindowSwapBuffers(window);
         spritzUpdateWindows();
     }
 }

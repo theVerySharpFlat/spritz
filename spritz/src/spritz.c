@@ -1,4 +1,4 @@
-#include <spritz.h>
+#include <spritz/spritz.h>
 
 #include <stdio.h>
 #include <stdlib.h>
