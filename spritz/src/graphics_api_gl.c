@@ -212,15 +212,9 @@ bool spritzGraphicsAPIGLCreateVertexBuffer(
                                           stride, (void*)offset));
         }
 
-        printf("count: %d\n", layoutArray[i].count);
-        printf("offset: %llu\n", offset);
-        printf("\n");
-
         GLCall(glEnableVertexAttribArray(i));
         offset += 4 * (uint64_t)layoutArray[i].count;
     }
-
-    printf("stride: %d\n", stride);
 
     vbo->maxSize = 0;
     vbo->maxElements = 0;
@@ -277,7 +271,6 @@ bool spritzGraphicsAPIGLSetIBOData(void* apiData, SpritzGLVBO_t* vbo,
 }
 
 bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
-    //printf("here\n");
     SpritzGLInternalData_t* glData = apiData;
 
     GLCall(glBindVertexArray(glData->quadVBO.vaoID));
@@ -287,17 +280,13 @@ bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
 
     spritzGraphicsAPIGLSetVBOData(
         apiData, &glData->quadVBO, renderer->quadData.vertices,
-        renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t));
+        renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t) * SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD);
     spritzGraphicsAPIGLSetIBOData(apiData, &glData->quadVBO,
                                   (uint32_t*)renderer->quadData.indicies,
                                   renderer->quadData.nextQuadIndex *
                                       SPRITZ_RENDERER_NUM_INDICES_PER_QUAD);
 
     GLCall(glUseProgram(glData->quadShader.id));
-
-    printf("draw %d\n", 
-                          renderer->quadData.nextQuadIndex *
-                              SPRITZ_RENDERER_NUM_INDICES_PER_QUAD);
 
     GLCall(glDrawElements(GL_TRIANGLES,
                           renderer->quadData.nextQuadIndex *
