@@ -17,7 +17,7 @@ int main() {
     };
 
     while (!spritzWindowShouldClose(window)) {
-        spritzWindowSetClearColor(window, 1.0f, 0.0f, 0.0f, 1.0f);
+        spritzWindowSetClearColor(window, 0.0f, 0.0f, 0.0f, 1.0f);
         spritzWindowClear(window);
 
         spritzQueueQuad(window, quadInfo);

@@ -195,13 +195,13 @@ bool spritzGraphicsAPIGLCreateVertexBuffer(
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbo->vboID));
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo->iboID));
 
-    uint64_t stride;
+    int stride = 0;
     for (int i = 0; layoutArray[i].type != SpritzRendererVertexLayoutTypeNull;
          i++) {
         stride += 4 * layoutArray[i].count;
     }
 
-    uint64_t offset;
+    uint64_t offset = 0;
     for (int i = 0; layoutArray[i].type != SpritzRendererVertexLayoutTypeNull;
          i++) {
         if (layoutArray[i].type == SpritzRendererVertexLayoutTypeFloat32) {
@@ -212,9 +212,15 @@ bool spritzGraphicsAPIGLCreateVertexBuffer(
                                           stride, (void*)offset));
         }
 
+        printf("count: %d\n", layoutArray[i].count);
+        printf("offset: %llu\n", offset);
+        printf("\n");
+
         GLCall(glEnableVertexAttribArray(i));
-        offset += 4 * layoutArray[i].count;
+        offset += 4 * (uint64_t)layoutArray[i].count;
     }
+
+    printf("stride: %d\n", stride);
 
     vbo->maxSize = 0;
     vbo->maxElements = 0;
@@ -236,14 +242,14 @@ bool spritzGraphicsAPIGLFreeVertexBuffer(void* apiData, SpritzGLVBO_t* vbo) {
 bool spritzGraphicsAPIGLSetVBOData(void* apiData, SpritzGLVBO_t* vbo,
                                    void* data, uint32_t size) {
     GLCall(glBindVertexArray(vbo->vaoID));
-    GLCall(glBindBuffer(vbo->vboID, GL_ARRAY_BUFFER));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbo->vboID));
 
     if (size > vbo->maxSize) {
-        GLCall(glBufferData(vbo->vboID, size, data, GL_DYNAMIC_DRAW));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, (int)size, data, GL_DYNAMIC_DRAW));
         vbo->maxSize = size;
         vbo->size = size;
     } else {
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, size, data));
+        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, (int)size, data));
         vbo->size = size;
     }
 
@@ -253,15 +259,16 @@ bool spritzGraphicsAPIGLSetVBOData(void* apiData, SpritzGLVBO_t* vbo,
 bool spritzGraphicsAPIGLSetIBOData(void* apiData, SpritzGLVBO_t* vbo,
                                    uint32_t* data, uint32_t nElements) {
     GLCall(glBindVertexArray(vbo->vaoID));
-    GLCall(glBindBuffer(vbo->iboID, GL_ELEMENT_ARRAY_BUFFER));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo->iboID));
 
     if (nElements > vbo->maxElements) {
-        GLCall(glBufferData(vbo->iboID, nElements * sizeof(uint32_t), data,
+        GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                            (int)(nElements * sizeof(uint32_t)), data,
                             GL_DYNAMIC_DRAW));
         vbo->maxElements = nElements;
         vbo->nElements = nElements;
     } else {
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, nElements * sizeof(uint32_t),
+        GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, nElements * sizeof(uint32_t),
                                data));
         vbo->nElements = nElements;
     }
@@ -270,16 +277,27 @@ bool spritzGraphicsAPIGLSetIBOData(void* apiData, SpritzGLVBO_t* vbo,
 }
 
 bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
+    //printf("here\n");
     SpritzGLInternalData_t* glData = apiData;
 
     GLCall(glBindVertexArray(glData->quadVBO.vaoID));
-    GLCall(glBindBuffer(glData->quadVBO.vboID, GL_ARRAY_BUFFER));
-    GLCall(glBindBuffer(glData->quadVBO.iboID, GL_ELEMENT_ARRAY_BUFFER));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, glData->quadVBO.vboID));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->quadVBO.iboID));
 
-    spritzGraphicsAPIGLSetVBOData(apiData, &glData->quadVBO, renderer->quadData.vertices, renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t));
-    spritzGraphicsAPIGLSetIBOData(apiData, &glData->quadVBO, (uint32_t*)renderer->quadData.indicies, renderer->quadData.nextQuadIndex * SPRITZ_RENDERER_NUM_INDICES_PER_QUAD);
+
+    spritzGraphicsAPIGLSetVBOData(
+        apiData, &glData->quadVBO, renderer->quadData.vertices,
+        renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t));
+    spritzGraphicsAPIGLSetIBOData(apiData, &glData->quadVBO,
+                                  (uint32_t*)renderer->quadData.indicies,
+                                  renderer->quadData.nextQuadIndex *
+                                      SPRITZ_RENDERER_NUM_INDICES_PER_QUAD);
 
     GLCall(glUseProgram(glData->quadShader.id));
+
+    printf("draw %d\n", 
+                          renderer->quadData.nextQuadIndex *
+                              SPRITZ_RENDERER_NUM_INDICES_PER_QUAD);
 
     GLCall(glDrawElements(GL_TRIANGLES,
                           renderer->quadData.nextQuadIndex *
@@ -296,6 +314,7 @@ SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     api.PFN_clear = spritzGraphicsAPIGLClear;
     api.PFN_shutdown = spritzGraphicsAPIGLShutdown;
     api.PFN_setClearColor = spritzGraphicsAPIGLSetClearColor;
+    api.PFN_quadDrawCall = spritzGraphicsAPIGLQuadDrawCMD;
 
     api.internalData = malloc(sizeof(SpritzGLInternalData_t));
 
