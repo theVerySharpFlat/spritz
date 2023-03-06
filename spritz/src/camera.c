@@ -4,7 +4,7 @@
 #include "cglm/types.h"
 
 static void updateViewMatrix(SpritzCamera_t camera) {
-    vec3 eye = {camera->position[0], camera->position[1], -0.5f};
+    vec3 eye = {camera->position[0], camera->position[1], 0.5f};
     vec3 center = {camera->position[0], camera->position[1], 0.0f};
     vec3 up = {0.0f, 1.0f, 0.0f};
     glm_lookat(eye, center, up, camera->view);
@@ -14,8 +14,8 @@ SpritzCamera_t spritzCameraCreate(SpritzCameraCreateInfo_t createInfo) {
     SpritzCameraInternal_t* camera = malloc(sizeof(SpritzCameraInternal_t));
 
     glm_ortho(createInfo.projectionLeft, createInfo.projectionRight,
-              createInfo.projectionBottom, createInfo.projectionTop, -1.0f,
-              1.0f, camera->projection);
+              createInfo.projectionBottom, createInfo.projectionTop, 1.0f,
+              -1.0f, camera->projection);
 
     camera->position[0] = 0.0f;
     camera->position[1] = 0.0f;
