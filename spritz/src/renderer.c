@@ -121,5 +121,9 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
     memcpy(iPtr, &spritzRendererDefaultQuadIndexSet,
            sizeof(spritzRendererDefaultQuadIndexSet));
 
+    for(int i = 0; i < SPRITZ_RENDERER_NUM_INDICES_PER_QUAD; i++) {
+        iPtr->indices[i] += SPRITZ_RENDERER_NUM_INDICES_PER_QUAD * renderer->quadData.nextQuadIndex;
+    }
+
     renderer->quadData.nextQuadIndex++;
 }

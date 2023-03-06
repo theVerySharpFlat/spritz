@@ -29,7 +29,7 @@ typedef struct {
 #define SPRITZ_RENDERER_NUM_INDICES_PER_QUAD 6
 
 typedef struct {
-    const uint32_t indices[SPRITZ_RENDERER_NUM_INDICES_PER_QUAD];
+    uint32_t indices[SPRITZ_RENDERER_NUM_INDICES_PER_QUAD];
 } SpritzRendererQuadIndexSet_t;
 
 static SpritzRendererQuadIndexSet_t spritzRendererDefaultQuadIndexSet = {
