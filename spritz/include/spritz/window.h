@@ -1,6 +1,7 @@
 #ifndef SPRITZ_WINDOW_H
 #define SPRITZ_WINDOW_H
 
+#include "spritz/camera.h"
 #include "spritz/renderer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,8 +16,6 @@ typedef struct {
 
     SpritzGraphicsAPIID_t apiPreference;
     SpritzRendererOptions_t rendererOptions;
-
-    float projectionLeft, projectionRight, projectionTop, projectionBottom;
 } SpritzWindowCreateInfo_t;
 
 SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo);
@@ -35,7 +34,7 @@ void spritzUpdateWindows(void);
 
 void spritzWindowSwapBuffers(SpritzWindow_t window);
 
-bool spritzBegin(SpritzWindow_t window);
+bool spritzBegin(SpritzWindow_t window, SpritzCamera_t camera);
 bool spritzEnd(SpritzWindow_t window);
 
 bool spritzQueueQuad(SpritzWindow_t window, SpritzRendererQuadInfo_t quadInfo);

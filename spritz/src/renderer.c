@@ -2,17 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cglm/cam.h"
 #include "renderer_internal.h"
+#include "spritz/camera.h"
 #include <spritz/renderer.h>
 #include <window_internal.h>
 
-void spritzRendererBegin(SpritzRenderer_t *renderer) {
+void spritzRendererBegin(SpritzRenderer_t *renderer, SpritzWindow_t window, SpritzCamera_t camera) {
     renderer->quadData.statistics.nQuads = 0;
     renderer->quadData.statistics.nBatches = 0;
+
+    window->graphicsAPI.PFN_begin(window->graphicsAPI.internalData, camera);
 }
 
 void spritzRendererEnd(SpritzRenderer_t *renderer, SpritzWindow_t window) {
     spritzRendererFlushQuads(renderer, window);
+
+    window->graphicsAPI.PFN_end(window->graphicsAPI.internalData);
 }
 
 SpritzRenderer_t spritzRendererInitialize(SpritzRendererOptions_t options) {

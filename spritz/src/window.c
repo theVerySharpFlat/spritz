@@ -7,6 +7,7 @@
 
 #include <spritz/window.h>
 #include "renderer_internal.h"
+#include "spritz/camera.h"
 #include "spritz/renderer.h"
 #include "window_internal.h"
 
@@ -94,8 +95,8 @@ bool spritzFlush(SpritzWindow_t window) {
     return true;
 }
 
-bool spritzBegin(SpritzWindow_t window) {
-    spritzRendererBegin(&window->renderer);
+bool spritzBegin(SpritzWindow_t window, SpritzCamera_t camera) {
+    spritzRendererBegin(&window->renderer, window, camera);
     return true;
 }
 

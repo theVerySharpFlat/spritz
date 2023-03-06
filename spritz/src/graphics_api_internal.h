@@ -1,9 +1,10 @@
 #ifndef SPRITZ_GRAPHICS_API_INTERNAL_H
 #define SPRITZ_GRAPHICS_API_INTERNAL_H
 
+#include "renderer_internal.h"
+#include "spritz/camera.h"
 #include "spritz/graphics_api.h"
 #include "spritz/window.h"
-#include "renderer_internal.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,7 +23,10 @@ typedef bool (*SpritzGraphicsAPIClearFN)(void*);
 typedef bool (*SpritzGraphicsAPISetClearFN)(void*, float r, float g, float b,
                                             float a);
 
-typedef bool (*SpritzGraphicsQuadDrawCallFN)(void*, SpritzRenderer_t* renderer);
+typedef bool (*SpritzGraphicsAPIQuadDrawCallFN)(void*,
+                                                SpritzRenderer_t* renderer);
+typedef bool (*SpritzGraphicsAPIBeginFN)(void*, SpritzCamera_t camera);
+typedef bool (*SpritzGraphicsAPIEndFN)(void*);
 
 typedef struct {
     SpritzGraphicsAPIPreWindowSystemInitFN PFN_preInit;
@@ -32,7 +36,10 @@ typedef struct {
     SpritzGraphicsAPIClearFN PFN_clear;
     SpritzGraphicsAPISetClearFN PFN_setClearColor;
 
-    SpritzGraphicsQuadDrawCallFN PFN_quadDrawCall;
+    SpritzGraphicsAPIQuadDrawCallFN PFN_quadDrawCall;
+
+    SpritzGraphicsAPIBeginFN PFN_begin;
+    SpritzGraphicsAPIEndFN PFN_end;
 
     void* internalData;
 } SpritzGraphicsAPIInternal_t;

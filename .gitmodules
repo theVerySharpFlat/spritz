@@ -1,3 +1,6 @@
 [submodule "spritz/third_party/glfw"]
 	path = spritz/third_party/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "spritz/third_party/cglm"]
+	path = spritz/third_party/cglm
+	url = https://github.com/recp/cglm.git

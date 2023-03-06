@@ -6,7 +6,8 @@ set(SPRITZ_SOURCES
     src/graphics_api.c
     src/graphics_api_gl.c
     src/graphics_api_gl_shaders.c
-    src/renderer.c)
+    src/renderer.c
+    src/camera.c)
 
 add_library(spritz ${SPRITZ_SOURCES})
 
@@ -15,6 +16,7 @@ target_include_directories(spritz PRIVATE src)
 
 add_subdirectory(third_party/glfw)
 add_subdirectory(third_party/glad)
+add_subdirectory(third_party/cglm)
 
 find_package(OpenGL)
-target_link_libraries(spritz PRIVATE OpenGL::GL glfw glad)
+target_link_libraries(spritz PRIVATE OpenGL::GL glfw glad cglm)

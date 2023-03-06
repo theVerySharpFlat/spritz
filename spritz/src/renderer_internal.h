@@ -1,9 +1,13 @@
 #ifndef SPRITZ_RENDERER_API_INTERNAL_H
 #define SPRITZ_RENDERER_API_INTERNAL_H
 
+#include "spritz/camera.h"
 #include <spritz/renderer.h>
 #include <spritz/window.h>
 #include <stdint.h>
+
+#include <cglm/types.h>
+#include <cglm/cglm.h>
 
 typedef struct {
     float posX;
@@ -68,6 +72,8 @@ typedef struct {
             uint32_t nQuads;
         } statistics;
     } quadData;
+
+    mat4 projection;
 } SpritzRenderer_t;
 
 SpritzRenderer_t spritzRendererInitialize(SpritzRendererOptions_t options);
@@ -80,7 +86,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
 void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
                               SpritzWindow_t window);
 
-void spritzRendererBegin(SpritzRenderer_t* renderer);
+void spritzRendererBegin(SpritzRenderer_t* renderer, SpritzWindow_t window, SpritzCamera_t camera);
 
 void spritzRendererEnd(SpritzRenderer_t* renderer, SpritzWindow_t window);
 

@@ -1,3 +1,4 @@
+#include "spritz/camera.h"
 #include <stdio.h>
 
 #include <spritz/graphics_api.h>
@@ -17,20 +18,21 @@ int main() {
         .apiPreference = SpritzGraphicsAPIGL,
         .name = "Spritz!",
 
-        .projectionLeft = 0.0,
-        .projectionRight = 720.0,
-        .projectionTop = 0.0,
-        .projectionBottom = 540.0,
-
         .rendererOptions = rendererOptions
     };
 
     SpritzWindow_t window =
         spritzWindowCreate(createInfo);
 
+    SpritzCameraCreateInfo_t cameraCreateInfo = {
+        -360.0f, 360.0f,
+        270.0f, -270.0f
+    };
+    SpritzCamera_t camera = spritzCreateCamera(cameraCreateInfo);
+
     SpritzRendererQuadInfo_t quadInfo= {
         NULL,
-        -0.5f, 0.5f, 0.5f, -0.5f,
+        100.0f, 200.0f, 200.0f, 100.0f,
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 1.0f,
         1.0f
@@ -40,7 +42,7 @@ int main() {
         spritzWindowSetClearColor(window, 0.0f, 0.0f, 0.0f, 1.0f);
         spritzWindowClear(window);
 
-        spritzBegin(window);
+        spritzBegin(window, camera);
 
         spritzQueueQuad(window, quadInfo);
         spritzFlush(window);

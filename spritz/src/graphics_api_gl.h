@@ -24,6 +24,9 @@ typedef struct SpritzGLShader SpritzGLShader_t;
 
 typedef struct {
     SpritzGLShader_t quadShader;
+    int quadShaderUProjLocation;
+    int quadShaderUViewLocation;
+
     SpritzGLVBO_t quadVBO;
 } SpritzGLInternalData_t;
 

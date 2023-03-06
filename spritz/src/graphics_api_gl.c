@@ -1,7 +1,8 @@
 #include "graphics_api_gl.h"
+#include "camera_internal.h"
 #include "graphics_api_gl_shaders.h"
 #include "graphics_api_internal.h"
-#include <OpenGL/OpenGL.h>
+#include "spritz/camera.h"
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>
@@ -262,8 +263,8 @@ bool spritzGraphicsAPIGLSetIBOData(void* apiData, SpritzGLVBO_t* vbo,
         vbo->maxElements = nElements;
         vbo->nElements = nElements;
     } else {
-        GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, nElements * sizeof(uint32_t),
-                               data));
+        GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0,
+                               nElements * sizeof(uint32_t), data));
         vbo->nElements = nElements;
     }
 
@@ -277,10 +278,10 @@ bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, glData->quadVBO.vboID));
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData->quadVBO.iboID));
 
-
     spritzGraphicsAPIGLSetVBOData(
         apiData, &glData->quadVBO, renderer->quadData.vertices,
-        renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t) * SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD);
+        renderer->quadData.nextQuadIndex * sizeof(SpritzRendererQuadVertex_t) *
+            SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD);
     spritzGraphicsAPIGLSetIBOData(apiData, &glData->quadVBO,
                                   (uint32_t*)renderer->quadData.indicies,
                                   renderer->quadData.nextQuadIndex *
@@ -296,6 +297,31 @@ bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
     return true;
 }
 
+bool spritzGraphicsAPIGLBegin(void* apiData, SpritzCamera_t camera) {
+    SpritzGLInternalData_t* glData = apiData;
+
+    GLCall(glUseProgram(glData->quadShader.id));
+
+    if (glData->quadShaderUViewLocation < 0) {
+        GLCall(glData->quadShaderUViewLocation =
+                   glGetUniformLocation(glData->quadShader.id, "uView"));
+    }
+
+    if (glData->quadShaderUProjLocation < 0) {
+        GLCall(glData->quadShaderUProjLocation =
+                   glGetUniformLocation(glData->quadShader.id, "uProj"));
+    }
+
+    GLCall(glUniformMatrix4fv(glData->quadShaderUProjLocation, 1, GL_FALSE,
+                              camera->projection[0]));
+    GLCall(glUniformMatrix4fv(glData->quadShaderUViewLocation, 1, GL_FALSE,
+                              camera->view[0]));
+
+    return true;
+}
+
+bool spritzGraphicsAPIGLEnd(void* apiData) { return true; }
+
 SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     SpritzGraphicsAPIInternal_t api = {};
     api.PFN_init = spritzGraphicsAPIGLInit;
@@ -304,8 +330,14 @@ SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     api.PFN_shutdown = spritzGraphicsAPIGLShutdown;
     api.PFN_setClearColor = spritzGraphicsAPIGLSetClearColor;
     api.PFN_quadDrawCall = spritzGraphicsAPIGLQuadDrawCMD;
+    api.PFN_begin = spritzGraphicsAPIGLBegin;
+    api.PFN_end = spritzGraphicsAPIGLEnd;
 
     api.internalData = malloc(sizeof(SpritzGLInternalData_t));
+
+    SpritzGLInternalData_t* glData = api.internalData;
+    glData->quadShaderUProjLocation = -1;
+    glData->quadShaderUViewLocation = -1;
 
     return api;
 }
