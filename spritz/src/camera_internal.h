@@ -9,6 +9,8 @@
 struct SpritzCameraInternal {
     mat4 projection;
     mat4 view;
+
+    vec2 position;
 };
 
 typedef struct SpritzCameraInternal SpritzCameraInternal_t;

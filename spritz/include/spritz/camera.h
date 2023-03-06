@@ -7,7 +7,10 @@ typedef struct {
 
 typedef struct SpritzCameraInternal* SpritzCamera_t;
 
-SpritzCamera_t spritzCreateCamera(SpritzCameraCreateInfo_t createInfo);
-void spritzDestroyCamera(SpritzCamera_t camera);
+SpritzCamera_t spritzCameraCreate(SpritzCameraCreateInfo_t createInfo);
+void spritzCameraDestroy(SpritzCamera_t camera);
+
+void spritzCameraSetPosition(SpritzCamera_t camera, float x, float y);
+void spritzCameraGetPosition(SpritzCamera_t camera, float* x, float* y);
 
 #endif

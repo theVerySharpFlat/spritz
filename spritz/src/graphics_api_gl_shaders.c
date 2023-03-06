@@ -15,7 +15,7 @@ const char* spritzGlQuadShaderVS =
     "uniform mat4 uProj;\n"
     "\n"
     "void main() {\n"
-    "   gl_Position = uView * uProj * vec4(iPos, 0.0, 1.0);\n"
+    "   gl_Position = uProj * uView * vec4(iPos, 0.0, 1.0);\n"
     "   color = iColor;"
     "}\n";
 

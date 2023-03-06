@@ -3,21 +3,37 @@
 #include "cglm/cam.h"
 #include "cglm/types.h"
 
-SpritzCamera_t spritzCreateCamera(SpritzCameraCreateInfo_t createInfo) {
+static void updateViewMatrix(SpritzCamera_t camera) {
+    vec3 eye = {camera->position[0], camera->position[1], -0.5f};
+    vec3 center = {camera->position[0], camera->position[1], 0.0f};
+    vec3 up = {0.0f, 1.0f, 0.0f};
+    glm_lookat(eye, center, up, camera->view);
+}
+
+SpritzCamera_t spritzCameraCreate(SpritzCameraCreateInfo_t createInfo) {
     SpritzCameraInternal_t* camera = malloc(sizeof(SpritzCameraInternal_t));
 
     glm_ortho(createInfo.projectionLeft, createInfo.projectionRight,
               createInfo.projectionBottom, createInfo.projectionTop, -1.0f,
               1.0f, camera->projection);
 
-    vec3 eye = {0.0f, 0.0f, -0.5f};
-    vec3 center = {0.0f, 0.0f, 0.0f};
-    vec3 up = {0.0f, 1.0f, 0.0f};
-    glm_lookat(eye, center, up, camera->view);
+    camera->position[0] = 0.0f;
+    camera->position[1] = 0.0f;
+
+    updateViewMatrix(camera);
 
     return camera;
 }
 
-void spritzDestroyCamera(SpritzCamera_t camera) {
-    free(camera);
+void spritzCameraSetPosition(SpritzCamera_t camera, float x, float y) {
+    camera->position[0] = x;
+    camera->position[1] = y;
+    updateViewMatrix(camera);
 }
+
+void spritzCameraGetPosition(SpritzCamera_t camera, float* x, float* y) {
+    *x = camera->position[0];
+    *y = camera->position[1];
+}
+
+void spritzCameraDestroy(SpritzCamera_t camera) { free(camera); }
