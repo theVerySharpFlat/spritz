@@ -6,6 +6,15 @@
 #include <spritz/renderer.h>
 #include <window_internal.h>
 
+void spritzRendererBegin(SpritzRenderer_t *renderer) {
+    renderer->quadData.statistics.nQuads = 0;
+    renderer->quadData.statistics.nBatches = 0;
+}
+
+void spritzRendererEnd(SpritzRenderer_t *renderer, SpritzWindow_t window) {
+    spritzRendererFlushQuads(renderer, window);
+}
+
 SpritzRenderer_t spritzRendererInitialize(SpritzRendererOptions_t options) {
     SpritzRenderer_t renderer = {};
 
@@ -28,6 +37,10 @@ void spritzRendererDestruct(SpritzRenderer_t* renderer) {
 
 void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
                               SpritzWindow_t window) {
+    if(renderer->quadData.nextQuadIndex <= 0) {
+        return;
+    }
+
     window->graphicsAPI.PFN_quadDrawCall(window->graphicsAPI.internalData, renderer);
     renderer->quadData.nextQuadIndex = 0;
 }

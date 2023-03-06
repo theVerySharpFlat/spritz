@@ -16,9 +16,7 @@ static void GLFWErrorCallback(int error, const char* description) {
     printf("GLFW erorr (%d): %s", error, description);
 }
 
-SpritzWindow_t spritzWindowCreate(int32_t width, int32_t height,
-                                  const char* name,
-                                  SpritzGraphicsAPIID_t apiPreference) {
+SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo) {
     SpritzWindow_t window = malloc(sizeof(struct SpritzWindow));
 
     if (!windowCount) {
@@ -29,12 +27,12 @@ SpritzWindow_t spritzWindowCreate(int32_t width, int32_t height,
     }
 
     SpritzGraphicsAPIInternal_t graphicsAPI =
-        spritzLoadGraphicsAPI(apiPreference);
+        spritzLoadGraphicsAPI(createInfo.apiPreference);
 
     graphicsAPI.PFN_preInit(graphicsAPI.internalData);
 
     GLFWwindow* nativeWindow =
-        glfwCreateWindow(width, height, name, NULL, NULL);
+        glfwCreateWindow(createInfo.width, createInfo.height, createInfo.name, NULL, NULL);
     glfwMakeContextCurrent(nativeWindow);
 
     window->window = nativeWindow;
@@ -46,11 +44,8 @@ SpritzWindow_t spritzWindowCreate(int32_t width, int32_t height,
 
     graphicsAPI.PFN_init(graphicsAPI.internalData, initInfo);
 
-    SpritzRendererOptions_t rendererOptions = {
-        128
-    };
 
-    window->renderer = spritzRendererInitialize(rendererOptions);
+    window->renderer = spritzRendererInitialize(createInfo.rendererOptions);
 
     windowCount++;
 
@@ -96,5 +91,15 @@ bool spritzQueueQuad(SpritzWindow_t window, SpritzRendererQuadInfo_t quadInfo) {
 
 bool spritzFlush(SpritzWindow_t window) {
     spritzRendererFlushQuads(&window->renderer, window);
+    return true;
+}
+
+bool spritzBegin(SpritzWindow_t window) {
+    spritzRendererBegin(&window->renderer);
+    return true;
+}
+
+bool spritzEnd(SpritzWindow_t window) {
+    spritzRendererEnd(&window->renderer, window);
     return true;
 }

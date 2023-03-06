@@ -9,9 +9,17 @@
 
 typedef struct SpritzWindow* SpritzWindow_t;
 
-SpritzWindow_t spritzWindowCreate(int32_t width, int32_t height,
-                                  const char* name,
-                                  SpritzGraphicsAPIID_t apiPreference);
+typedef struct {
+    int32_t width, height;
+    const char* name;
+
+    SpritzGraphicsAPIID_t apiPreference;
+    SpritzRendererOptions_t rendererOptions;
+
+    float projectionLeft, projectionRight, projectionTop, projectionBottom;
+} SpritzWindowCreateInfo_t;
+
+SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo);
 
 void spritzWindowDestroy(SpritzWindow_t* window);
 
@@ -27,6 +35,8 @@ void spritzUpdateWindows(void);
 
 void spritzWindowSwapBuffers(SpritzWindow_t window);
 
+bool spritzBegin(SpritzWindow_t window);
+bool spritzEnd(SpritzWindow_t window);
 
 bool spritzQueueQuad(SpritzWindow_t window, SpritzRendererQuadInfo_t quadInfo);
 

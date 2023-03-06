@@ -62,6 +62,11 @@ typedef struct {
         SpritzRendererQuadVertex_t* vertices;
         SpritzRendererQuadIndexSet_t* indicies;
         uint32_t nextQuadIndex;
+
+        struct {
+            uint32_t nBatches;
+            uint32_t nQuads;
+        } statistics;
     } quadData;
 } SpritzRenderer_t;
 
@@ -69,8 +74,14 @@ SpritzRenderer_t spritzRendererInitialize(SpritzRendererOptions_t options);
 
 void spritzRendererDestruct(SpritzRenderer_t* renderer);
 
-void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window, SpritzRendererQuadInfo_t quad);
+void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
+                             SpritzRendererQuadInfo_t quad);
 
-void spritzRendererFlushQuads(SpritzRenderer_t* renderer, SpritzWindow_t window);
+void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
+                              SpritzWindow_t window);
+
+void spritzRendererBegin(SpritzRenderer_t* renderer);
+
+void spritzRendererEnd(SpritzRenderer_t* renderer, SpritzWindow_t window);
 
 #endif // !SPRITZ_RENDERER_API_INTERNAL_H
