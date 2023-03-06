@@ -7,7 +7,8 @@ set(SPRITZ_SOURCES
     src/graphics_api_gl.c
     src/graphics_api_gl_shaders.c
     src/renderer.c
-    src/camera.c)
+    src/camera.c
+    src/time.c)
 
 add_library(spritz ${SPRITZ_SOURCES})
 

@@ -1,4 +1,5 @@
 #include "spritz/camera.h"
+#include "spritz/time.h"
 #include <stdio.h>
 
 #include <spritz/graphics_api.h>
@@ -23,11 +24,11 @@ int main() {
                                                  -270.0f};
     SpritzCamera_t camera = spritzCameraCreate(cameraCreateInfo);
 
-    SpritzRendererQuadInfo_t quadInfo = {NULL, 100.0f, 200.0f, 200.0f, 100.0f,
-                                         0.0f, 0.0f,   0.0f,   0.0f,   0.0f,
-                                         1.0f, 0.0f,   1.0f,   1.0f};
-
+    uint64_t frameNumber = 0;
+    double timeTotal = 0;
     while (!spritzWindowShouldClose(window)) {
+        double start = spritzGetTime();
+
         spritzWindowSetClearColor(window, 0.0f, 0.0f, 0.0f, 1.0f);
         spritzWindowClear(window);
 
@@ -36,16 +37,16 @@ int main() {
             spritzCameraGetPosition(camera, &camX, &camY);
 
             if (spritzWindowIsKeyPressed(window, SPRITZ_KEY_W)) {
-                camY += 0.2;
+                camY += 1.5;
             }
             if (spritzWindowIsKeyPressed(window, SPRITZ_KEY_A)) {
-                camX += -0.2;
+                camX += -1.5;
             }
             if (spritzWindowIsKeyPressed(window, SPRITZ_KEY_S)) {
-                camY += -0.2;
+                camY += -1.5;
             }
             if (spritzWindowIsKeyPressed(window, SPRITZ_KEY_D)) {
-                camX += 0.2;
+                camX += 1.5;
             }
 
             spritzCameraSetPosition(camera, camX, camY);
@@ -53,12 +54,31 @@ int main() {
 
         spritzBegin(window, camera);
 
-        spritzQueueQuad(window, quadInfo);
-        spritzFlush(window);
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                float left = i * 110.0f;
+                float bottom = j * 110.0f;
+                SpritzRendererQuadInfo_t quadInfo = {
+                    NULL,          left,   bottom + 100.0f,
+                    left + 100.0f, bottom, 0.0f,
+                    0.0f,          0.0f,   0.0f,
+                    0.0f,          1.0f,   0.0f,
+                    1.0f,          1.0f};
+                spritzQueueQuad(window, quadInfo);
+            }
+        }
 
         spritzEnd(window);
 
         spritzWindowSwapBuffers(window);
         spritzUpdateWindows();
+
+        timeTotal += spritzGetTime() - start;
+        if(frameNumber % 10 == 0) {
+            printf("average frame time: %f\n", timeTotal / 10.0);
+            timeTotal = 0.0;
+        }
+
+        frameNumber++;
     }
 }

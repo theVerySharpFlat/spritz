@@ -47,6 +47,8 @@ void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
         return;
     }
 
+    printf("quadIndex=%d ", renderer->quadData.nextQuadIndex);
+
     window->graphicsAPI.PFN_quadDrawCall(window->graphicsAPI.internalData, renderer);
     renderer->quadData.nextQuadIndex = 0;
 }

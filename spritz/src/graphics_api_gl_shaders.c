@@ -27,6 +27,6 @@ const char* spritzGlQuadShaderFS =
     "out vec4 oColor;\n"
     "\n"
     "void main() {\n"
-    "   oColor = vec4(1.0, 0.0, 0.0, 1.0);//color;\n"
+    "   oColor = color;\n"
     "}\n"
     ;
