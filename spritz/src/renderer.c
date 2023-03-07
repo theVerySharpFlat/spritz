@@ -47,8 +47,6 @@ void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
         return;
     }
 
-    printf("quadIndex=%d ", renderer->quadData.nextQuadIndex);
-
     window->graphicsAPI.PFN_quadDrawCall(window->graphicsAPI.internalData, renderer);
     renderer->quadData.nextQuadIndex = 0;
 }
@@ -122,7 +120,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
            sizeof(spritzRendererDefaultQuadIndexSet));
 
     for(int i = 0; i < SPRITZ_RENDERER_NUM_INDICES_PER_QUAD; i++) {
-        iPtr->indices[i] += SPRITZ_RENDERER_NUM_INDICES_PER_QUAD * renderer->quadData.nextQuadIndex;
+        iPtr->indices[i] += SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD * renderer->quadData.nextQuadIndex;
     }
 
     renderer->quadData.nextQuadIndex++;

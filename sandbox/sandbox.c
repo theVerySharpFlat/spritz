@@ -8,7 +8,7 @@
 #include <spritz/window.h>
 
 int main() {
-    SpritzRendererOptions_t rendererOptions = {.nQuadsPerBatch = 128};
+    SpritzRendererOptions_t rendererOptions = {.nQuadsPerBatch = 1024};
 
     SpritzWindowCreateInfo_t createInfo = {.width = 720,
                                            .height = 540,
@@ -54,16 +54,18 @@ int main() {
 
         spritzBegin(window, camera);
 
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
                 float left = i * 110.0f;
                 float bottom = j * 110.0f;
                 SpritzRendererQuadInfo_t quadInfo = {
-                    NULL,          left,   bottom + 100.0f,
-                    left + 100.0f, bottom, 0.0f,
-                    0.0f,          0.0f,   0.0f,
-                    0.0f,          1.0f,   0.0f,
-                    1.0f,          1.0f};
+                    .topLeftX = left,
+                    .bottomRightX = left + 100.0f,
+                    .topLeftY = bottom + 100.0f,
+                    .bottomRightY = bottom,
+                    .colorR = 0.0f,
+                    .colorG = 1.0f,
+                    .colorB = 0.0f};
                 spritzQueueQuad(window, quadInfo);
             }
         }
@@ -74,7 +76,7 @@ int main() {
         spritzUpdateWindows();
 
         timeTotal += spritzGetTime() - start;
-        if(frameNumber % 10 == 0) {
+        if (frameNumber % 10 == 0) {
             printf("average frame time: %f\n", timeTotal / 10.0);
             timeTotal = 0.0;
         }
