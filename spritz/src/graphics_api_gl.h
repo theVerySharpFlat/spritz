@@ -52,4 +52,6 @@ bool spritzGraphicsAPIGLFreeVertexBuffer(void* apiData, SpritzGLVBO_t* vbo);
 
 bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer);
 
+bool spritzGraphicsAPIGLViewportResize(void* apiData, int offX, int offY, int width, int height);
+
 #endif

@@ -13,6 +13,8 @@ struct SpritzWindow {
     GLFWwindow* window;
     SpritzGraphicsAPIInternal_t graphicsAPI;
     SpritzRenderer_t renderer;
+
+    float aspectRatio; // width/height
 };
 
 #endif

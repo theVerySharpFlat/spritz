@@ -15,18 +15,24 @@ typedef struct {
     SpritzWindow_t window;
 } SpritzGraphicsAPIInitInfo_t;
 
-typedef bool (*SpritzGraphicsAPIPreWindowSystemInitFN)(void*);
-typedef bool (*SpritzGraphicsAPIInitFN)(void*, SpritzGraphicsAPIInitInfo_t);
-typedef bool (*SpritzGraphicsAPIShutdownFN)(void*);
+typedef bool (*SpritzGraphicsAPIPreWindowSystemInitFN)(void* uData);
+typedef bool (*SpritzGraphicsAPIInitFN)(void* uData,
+                                        SpritzGraphicsAPIInitInfo_t);
+typedef bool (*SpritzGraphicsAPIShutdownFN)(void* uData);
 
-typedef bool (*SpritzGraphicsAPIClearFN)(void*);
-typedef bool (*SpritzGraphicsAPISetClearFN)(void*, float r, float g, float b,
-                                            float a);
+typedef bool (*SpritzGraphicsAPIClearFN)(void* uData);
+typedef bool (*SpritzGraphicsAPISetClearFN)(void* uData, float r, float g,
+                                            float b, float a);
 
-typedef bool (*SpritzGraphicsAPIQuadDrawCallFN)(void*,
+typedef bool (*SpritzGraphicsAPIQuadDrawCallFN)(void* uData,
                                                 SpritzRenderer_t* renderer);
-typedef bool (*SpritzGraphicsAPIBeginFN)(void*, SpritzCamera_t camera);
-typedef bool (*SpritzGraphicsAPIEndFN)(void*);
+
+typedef bool (*SpritzGraphicsAPIViewportResizeFN)(void* uData, int offX,
+                                                  int offY, int width,
+                                                  int height);
+
+typedef bool (*SpritzGraphicsAPIBeginFN)(void* uData, SpritzCamera_t camera);
+typedef bool (*SpritzGraphicsAPIEndFN)(void* uData);
 
 typedef struct {
     SpritzGraphicsAPIPreWindowSystemInitFN PFN_preInit;
@@ -37,6 +43,8 @@ typedef struct {
     SpritzGraphicsAPISetClearFN PFN_setClearColor;
 
     SpritzGraphicsAPIQuadDrawCallFN PFN_quadDrawCall;
+
+    SpritzGraphicsAPIViewportResizeFN PFN_viewportResize;
 
     SpritzGraphicsAPIBeginFN PFN_begin;
     SpritzGraphicsAPIEndFN PFN_end;

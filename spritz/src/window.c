@@ -1,20 +1,67 @@
 #include "GLFW/glfw3.h"
-#include <spritz/graphics_api.h>
 #include "graphics_api_internal.h"
+#include <spritz/graphics_api.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <spritz/window.h>
 #include "renderer_internal.h"
 #include "spritz/camera.h"
 #include "spritz/renderer.h"
 #include "window_internal.h"
+#include <spritz/window.h>
 
 static int windowCount = 0;
 
 static void GLFWErrorCallback(int error, const char* description) {
     printf("GLFW erorr (%d): %s", error, description);
+}
+
+static void GLFWFramebufferResizeCallback(GLFWwindow* window, int width,
+                                          int height) {
+    SpritzWindow_t spritzWindow = glfwGetWindowUserPointer(window);
+
+    // calculate expanded dimensions
+    float expandedWidth =
+        (float)height * spritzWindow->aspectRatio; // what would the width be if
+                                                   // we maximized the height?
+    float expandedHeight =
+        (float)width / spritzWindow->aspectRatio; // what would the height be if
+                                                  // we maximized the width?
+
+    bool maximizeWidth = (int)expandedHeight <= height;
+    bool maximizeHeight = (int)expandedWidth <= width;
+
+    int viewportWidth = 0, viewportHeight = 0;
+    if (maximizeWidth) {
+        viewportWidth = width;
+        viewportHeight = expandedHeight;
+    } else if (maximizeHeight) {
+        viewportWidth = expandedWidth;
+        viewportHeight = height;
+    } else {
+        fprintf(stderr,
+                "spritz: There should never be this point in window resizing "
+                "where we can't decide whether or not to maximize width or "
+                "maximize height! This is a developer bug!\n");
+        return;
+    }
+
+    int offsetX = 0, offsetY = 0;
+    offsetX = (int)((float)(width - viewportWidth) / 2.0f);
+    offsetY = (int)((float)(height - viewportHeight) / 2.0f);
+
+    if (offsetX < 0 || offsetY < 0) {
+        fprintf(stderr, "Window viewport offset should never be less than "
+                        "zero. This is a developer bug!\n");
+        return;
+    }
+
+    spritzWindow->graphicsAPI.PFN_viewportResize(spritzWindow->graphicsAPI.internalData, offsetX, offsetY, viewportWidth, viewportHeight);
+}
+
+static void GLFWWIndowResizeCallback(GLFWwindow* window, int width, int height) {
+    GLFWFramebufferResizeCallback(window, width * 2, height * 2);
 }
 
 SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo) {
@@ -27,24 +74,29 @@ SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo) {
         glfwSetErrorCallback(GLFWErrorCallback);
     }
 
+    window->aspectRatio = (float)createInfo.width / (float)createInfo.height;
+
     SpritzGraphicsAPIInternal_t graphicsAPI =
         spritzLoadGraphicsAPI(createInfo.apiPreference);
 
     graphicsAPI.PFN_preInit(graphicsAPI.internalData);
 
-    GLFWwindow* nativeWindow =
-        glfwCreateWindow(createInfo.width, createInfo.height, createInfo.name, NULL, NULL);
+    GLFWwindow* nativeWindow = glfwCreateWindow(
+        createInfo.width, createInfo.height, createInfo.name, NULL, NULL);
     glfwMakeContextCurrent(nativeWindow);
 
     window->window = nativeWindow;
     window->graphicsAPI = graphicsAPI;
+
+    glfwSetWindowUserPointer(nativeWindow, window);
+    glfwSetFramebufferSizeCallback(nativeWindow, GLFWFramebufferResizeCallback);
+    glfwSetWindowSizeCallback(nativeWindow, GLFWWIndowResizeCallback);
 
     SpritzGraphicsAPIInitInfo_t initInfo = {};
     initInfo.window = window;
     initInfo.nQuadsPerBatch = 128;
 
     graphicsAPI.PFN_init(graphicsAPI.internalData, initInfo);
-
 
     window->renderer = spritzRendererInitialize(createInfo.rendererOptions);
 
@@ -82,7 +134,8 @@ bool spritzWindowClear(SpritzWindow_t window) {
 
 bool spritzWindowSetClearColor(SpritzWindow_t window, float r, float g, float b,
                                float a) {
-    return window->graphicsAPI.PFN_setClearColor(window->graphicsAPI.internalData, r, g, b, a);
+    return window->graphicsAPI.PFN_setClearColor(
+        window->graphicsAPI.internalData, r, g, b, a);
 }
 
 bool spritzQueueQuad(SpritzWindow_t window, SpritzRendererQuadInfo_t quadInfo) {

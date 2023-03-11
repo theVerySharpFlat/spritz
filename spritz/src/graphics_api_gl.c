@@ -3,6 +3,7 @@
 #include "graphics_api_gl_shaders.h"
 #include "graphics_api_internal.h"
 #include "spritz/camera.h"
+#include <OpenGL/OpenGL.h>
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>
@@ -322,6 +323,12 @@ bool spritzGraphicsAPIGLBegin(void* apiData, SpritzCamera_t camera) {
 
 bool spritzGraphicsAPIGLEnd(void* apiData) { return true; }
 
+bool spritzGraphicsAPIGLViewportResize(void *apiData, int offX, int offY, int width, int height) {
+    printf("hereeee\n");
+    GLCall(glViewport(offX, offY, width, height));
+    return true;
+}
+
 SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     SpritzGraphicsAPIInternal_t api = {};
     api.PFN_init = spritzGraphicsAPIGLInit;
@@ -332,6 +339,7 @@ SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     api.PFN_quadDrawCall = spritzGraphicsAPIGLQuadDrawCMD;
     api.PFN_begin = spritzGraphicsAPIGLBegin;
     api.PFN_end = spritzGraphicsAPIGLEnd;
+    api.PFN_viewportResize = spritzGraphicsAPIGLViewportResize;
 
     api.internalData = malloc(sizeof(SpritzGLInternalData_t));
 
