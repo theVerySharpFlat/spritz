@@ -73,8 +73,10 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
         }
     }
 
-    if (foundTextureIndex == renderer->quadData.nextQuadIndex)
-        renderer->quadData.nextQuadIndex++;
+    if (foundTextureIndex == renderer->quadData.nextQuadIndex) {
+        renderer->quadData.textures[renderer->quadData.nextTextureIndex] = quad.texture;
+        renderer->quadData.nextTextureIndex++;
+    }
 
     SpritzRendererQuadVertex_t v0 = {.posX = quad.topLeftX,
                                      .posY = quad.topLeftY,
@@ -103,7 +105,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
     SpritzRendererQuadVertex_t v2 = {.posX = quad.topLeftX,
                                      .posY = quad.bottomRightY,
                                      .texX = quad.texTopLeftX,
-                                     .texY = quad.bottomRightY,
+                                     .texY = quad.texBottomRightY,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
@@ -114,8 +116,8 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
 
     SpritzRendererQuadVertex_t v3 = {.posX = quad.bottomRightX,
                                      .posY = quad.bottomRightY,
-                                     .texX = quad.bottomRightX,
-                                     .texY = quad.bottomRightY,
+                                     .texX = quad.texBottomRightX,
+                                     .texY = quad.texBottomRightY,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
@@ -141,6 +143,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
         iPtr->indices[i] += SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD *
                             renderer->quadData.nextQuadIndex;
     }
+    printf("iptr %d\n", renderer->quadData.nextQuadIndex);
 
     renderer->quadData.nextQuadIndex++;
 }

@@ -70,8 +70,8 @@ int main() {
 
         spritzBegin(window, camera);
 
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
                 float left = i * 110.0f;
                 float bottom = j * 110.0f;
                 SpritzRendererQuadInfo_t quadInfo = {
