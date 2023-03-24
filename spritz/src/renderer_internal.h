@@ -6,8 +6,8 @@
 #include <spritz/window.h>
 #include <stdint.h>
 
-#include <cglm/types.h>
 #include <cglm/cglm.h>
+#include <cglm/types.h>
 
 typedef struct {
     float posX;
@@ -57,15 +57,14 @@ const static SpritzRendererVertexLayoutEntry_t
 };
 
 typedef struct {
-    void* textureHandle;
-} SpritzRendererTexture;
-
-typedef struct {
     SpritzRendererOptions_t options;
     struct {
         SpritzRendererQuadVertex_t* vertices;
         SpritzRendererQuadIndexSet_t* indicies;
+        SpritzRendererTextureHandle_t textures[16];
+
         uint32_t nextQuadIndex;
+        uint32_t nextTextureIndex;
 
         struct {
             uint32_t nBatches;
@@ -86,8 +85,18 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
 void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
                               SpritzWindow_t window);
 
-void spritzRendererBegin(SpritzRenderer_t* renderer, SpritzWindow_t window, SpritzCamera_t camera);
+void spritzRendererBegin(SpritzRenderer_t* renderer, SpritzWindow_t window,
+                         SpritzCamera_t camera);
 
 void spritzRendererEnd(SpritzRenderer_t* renderer, SpritzWindow_t window);
+
+void spritzRendererLoadTexture(SpritzRenderer_t* renderer,
+                               SpritzWindow_t window,
+                               SpritzRendererTextureCreateInfo_t createInfo,
+                               SpritzRendererTextureHandle_t* texture);
+
+void spritzRendererFreeTexture(SpritzRenderer_t* renderer,
+                               SpritzWindow_t window,
+                               SpritzRendererTextureHandle_t texture);
 
 #endif // !SPRITZ_RENDERER_API_INTERNAL_H

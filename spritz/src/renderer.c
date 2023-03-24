@@ -5,17 +5,19 @@
 #include "cglm/cam.h"
 #include "renderer_internal.h"
 #include "spritz/camera.h"
+#include "spritz/window.h"
 #include <spritz/renderer.h>
 #include <window_internal.h>
 
-void spritzRendererBegin(SpritzRenderer_t *renderer, SpritzWindow_t window, SpritzCamera_t camera) {
+void spritzRendererBegin(SpritzRenderer_t* renderer, SpritzWindow_t window,
+                         SpritzCamera_t camera) {
     renderer->quadData.statistics.nQuads = 0;
     renderer->quadData.statistics.nBatches = 0;
 
     window->graphicsAPI.PFN_begin(window->graphicsAPI.internalData, camera);
 }
 
-void spritzRendererEnd(SpritzRenderer_t *renderer, SpritzWindow_t window) {
+void spritzRendererEnd(SpritzRenderer_t* renderer, SpritzWindow_t window) {
     spritzRendererFlushQuads(renderer, window);
 
     window->graphicsAPI.PFN_end(window->graphicsAPI.internalData);
@@ -43,20 +45,36 @@ void spritzRendererDestruct(SpritzRenderer_t* renderer) {
 
 void spritzRendererFlushQuads(SpritzRenderer_t* renderer,
                               SpritzWindow_t window) {
-    if(renderer->quadData.nextQuadIndex <= 0) {
+    if (renderer->quadData.nextQuadIndex <= 0) {
         return;
     }
 
-    window->graphicsAPI.PFN_quadDrawCall(window->graphicsAPI.internalData, renderer);
+    window->graphicsAPI.PFN_quadDrawCall(window->graphicsAPI.internalData,
+                                         renderer);
     renderer->quadData.nextQuadIndex = 0;
+    renderer->quadData.nextTextureIndex = 0;
 }
 
-void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
-                             SpritzWindow_t window, SpritzRendererQuadInfo_t
-                                 quad) {
-    if (renderer->quadData.nextQuadIndex >= renderer->options.nQuadsPerBatch) {
+void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
+                             SpritzRendererQuadInfo_t quad) {
+    if (renderer->quadData.nextQuadIndex >= renderer->options.nQuadsPerBatch ||
+        renderer->quadData.nextTextureIndex >= 16) {
         spritzRendererFlushQuads(renderer, window);
     }
+
+    // Make sure we don't load two instances of the same texture handle into the
+    // drawcall's texture array
+
+    uint32_t foundTextureIndex = renderer->quadData.nextQuadIndex;
+
+    for (uint32_t i = 0; i < renderer->quadData.nextTextureIndex; i++) {
+        if (renderer->quadData.textures[i] == quad.texture) {
+            foundTextureIndex = i;
+        }
+    }
+
+    if (foundTextureIndex == renderer->quadData.nextQuadIndex)
+        renderer->quadData.nextQuadIndex++;
 
     SpritzRendererQuadVertex_t v0 = {.posX = quad.topLeftX,
                                      .posY = quad.topLeftY,
@@ -65,7 +83,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
-                                     // TODO:.texIndex = quad.texI
+                                     .texIndex = foundTextureIndex,
                                      .finalColorAlpha = quad.finalColorAlpha,
                                      .texAndColorBlendFactor =
                                          quad.texAndColorBlendFactor};
@@ -77,7 +95,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
-                                     // TODO:.texIndex = quad.texI
+                                     .texIndex = foundTextureIndex,
                                      .finalColorAlpha = quad.finalColorAlpha,
                                      .texAndColorBlendFactor =
                                          quad.texAndColorBlendFactor};
@@ -89,7 +107,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
-                                     // TODO:.texIndex = quad.texI
+                                     .texIndex = foundTextureIndex,
                                      .finalColorAlpha = quad.finalColorAlpha,
                                      .texAndColorBlendFactor =
                                          quad.texAndColorBlendFactor};
@@ -101,7 +119,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
                                      .colorR = quad.colorR,
                                      .colorG = quad.colorG,
                                      .colorB = quad.colorB,
-                                     // TODO:.texIndex = quad.texI
+                                     .texIndex = foundTextureIndex,
                                      .finalColorAlpha = quad.finalColorAlpha,
                                      .texAndColorBlendFactor =
                                          quad.texAndColorBlendFactor};
@@ -119,9 +137,25 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer,
     memcpy(iPtr, &spritzRendererDefaultQuadIndexSet,
            sizeof(spritzRendererDefaultQuadIndexSet));
 
-    for(int i = 0; i < SPRITZ_RENDERER_NUM_INDICES_PER_QUAD; i++) {
-        iPtr->indices[i] += SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD * renderer->quadData.nextQuadIndex;
+    for (int i = 0; i < SPRITZ_RENDERER_NUM_INDICES_PER_QUAD; i++) {
+        iPtr->indices[i] += SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD *
+                            renderer->quadData.nextQuadIndex;
     }
 
     renderer->quadData.nextQuadIndex++;
+}
+
+void spritzRendererLoadTexture(SpritzRenderer_t* renderer,
+                               SpritzWindow_t window,
+                               SpritzRendererTextureCreateInfo_t createInfo,
+                               SpritzRendererTextureHandle_t* texture) {
+    window->graphicsAPI.PFN_loadTexture(window->graphicsAPI.internalData,
+                                        createInfo, texture);
+}
+
+void spritzRendererFreeTexture(SpritzRenderer_t* renderer,
+                               SpritzWindow_t window,
+                               SpritzRendererTextureHandle_t texture) {
+    window->graphicsAPI.PFN_freeTexture(window->graphicsAPI.internalData,
+                                        texture);
 }

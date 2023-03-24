@@ -41,6 +41,9 @@ bool spritzQueueQuad(SpritzWindow_t window, SpritzRendererQuadInfo_t quadInfo);
 
 bool spritzFlush(SpritzWindow_t window);
 
+void spritzLoadTexture(SpritzWindow_t window, SpritzRendererTextureCreateInfo_t createInfo, SpritzRendererTextureHandle_t* texture);
+void spritzFreeTexture(SpritzWindow_t window, SpritzRendererTextureHandle_t handle);
+
 #define SPRITZ_KEY_UNKNOWN -1
 
 /* Printable keys */

@@ -57,10 +57,13 @@ static void GLFWFramebufferResizeCallback(GLFWwindow* window, int width,
         return;
     }
 
-    spritzWindow->graphicsAPI.PFN_viewportResize(spritzWindow->graphicsAPI.internalData, offsetX, offsetY, viewportWidth, viewportHeight);
+    spritzWindow->graphicsAPI.PFN_viewportResize(
+        spritzWindow->graphicsAPI.internalData, offsetX, offsetY, viewportWidth,
+        viewportHeight);
 }
 
-static void GLFWWIndowResizeCallback(GLFWwindow* window, int width, int height) {
+static void GLFWWIndowResizeCallback(GLFWwindow* window, int width,
+                                     int height) {
     GLFWFramebufferResizeCallback(window, width * 2, height * 2);
 }
 
@@ -156,4 +159,15 @@ bool spritzBegin(SpritzWindow_t window, SpritzCamera_t camera) {
 bool spritzEnd(SpritzWindow_t window) {
     spritzRendererEnd(&window->renderer, window);
     return true;
+}
+
+void spritzLoadTexture(SpritzWindow_t window,
+                       SpritzRendererTextureCreateInfo_t createInfo,
+                       SpritzRendererTextureHandle_t* texture) {
+    spritzRendererLoadTexture(&window->renderer, window, createInfo, texture);
+}
+
+void spritzFreeTexture(SpritzWindow_t window,
+                       SpritzRendererTextureHandle_t texture) {
+    spritzRendererFreeTexture(&window->renderer, window, texture);
 }
