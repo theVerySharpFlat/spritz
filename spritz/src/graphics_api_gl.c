@@ -3,7 +3,6 @@
 #include "graphics_api_gl_shaders.h"
 #include "graphics_api_internal.h"
 #include "spritz/camera.h"
-#include <OpenGL/OpenGL.h>
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>
