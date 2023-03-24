@@ -4,6 +4,7 @@
 #include "renderer_internal.h"
 #include "spritz/camera.h"
 #include "spritz/graphics_api.h"
+#include "spritz/renderer.h"
 #include "spritz/window.h"
 
 #include <stdbool.h>
@@ -31,6 +32,13 @@ typedef bool (*SpritzGraphicsAPIViewportResizeFN)(void* uData, int offX,
                                                   int offY, int width,
                                                   int height);
 
+typedef bool (*SpritzGraphicsAPILoadTextureFN)(
+    void* uData, SpritzRendererTextureCreateInfo_t createInfo,
+    SpritzRendererTextureHandle_t* texture);
+
+typedef bool (*SpritzGraphicsAPIFreeTextureFN)(
+    void* uData, SpritzRendererTextureHandle_t texture);
+
 typedef bool (*SpritzGraphicsAPIBeginFN)(void* uData, SpritzCamera_t camera);
 typedef bool (*SpritzGraphicsAPIEndFN)(void* uData);
 
@@ -41,6 +49,9 @@ typedef struct {
 
     SpritzGraphicsAPIClearFN PFN_clear;
     SpritzGraphicsAPISetClearFN PFN_setClearColor;
+
+    SpritzGraphicsAPILoadTextureFN PFN_loadTexture;
+    SpritzGraphicsAPIFreeTextureFN PFN_freeTexture;
 
     SpritzGraphicsAPIQuadDrawCallFN PFN_quadDrawCall;
 

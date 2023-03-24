@@ -7,6 +7,8 @@
 #include <spritz/spritz.h>
 #include <spritz/window.h>
 
+#include "stb_image.h"
+
 int main() {
     SpritzRendererOptions_t rendererOptions = {.nQuadsPerBatch = 1024};
 
@@ -23,6 +25,20 @@ int main() {
     SpritzCameraCreateInfo_t cameraCreateInfo = {-360.0f, 360.0f, 270.0f,
                                                  -270.0f};
     SpritzCamera_t camera = spritzCameraCreate(cameraCreateInfo);
+
+    int width, height, nChannels;
+    void* iData =  stbi_load("assets/test.png", &width, &height, &nChannels, 3);
+    SpritzRendererTextureHandle_t textureHandle;
+
+    SpritzRendererTextureCreateInfo_t textureCreateInfo = {
+        .width = width,
+        .height = height,
+        .data = iData,
+        .size = sizeof(width * height * nChannels),
+        .imageType = SpritzRendererImageRGB
+    };
+
+    spritzLoadTexture(window, textureCreateInfo, &textureHandle);
 
     uint64_t frameNumber = 0;
     double timeTotal = 0;
@@ -65,7 +81,13 @@ int main() {
                     .bottomRightY = bottom,
                     .colorR = 0.0f,
                     .colorG = 1.0f,
-                    .colorB = 0.0f};
+                    .colorB = 0.0f,
+                    .texture = textureHandle,
+                    .texTopLeftX = 0.0f,
+                    .texTopLeftY = 1.0f,
+                    .texBottomRightX = 1.0f,
+                    .texBottomRightY = 0.0f
+                };
                 spritzQueueQuad(window, quadInfo);
             }
         }

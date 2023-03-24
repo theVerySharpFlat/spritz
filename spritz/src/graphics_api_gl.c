@@ -3,6 +3,7 @@
 #include "graphics_api_gl_shaders.h"
 #include "graphics_api_internal.h"
 #include "spritz/camera.h"
+#include "spritz/renderer.h"
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>
@@ -289,6 +290,13 @@ bool spritzGraphicsAPIGLQuadDrawCMD(void* apiData, SpritzRenderer_t* renderer) {
 
     GLCall(glUseProgram(glData->quadShader.id));
 
+    for(int i = 0; i < renderer->quadData.nextTextureIndex; i++) {
+        GLCall(glActiveTexture(GL_TEXTURE0 + i));
+
+        SpritzGLTexture_t* tex = renderer->quadData.textures[i];
+        GLCall(glBindTexture(GL_TEXTURE_2D, tex->id));
+    }
+
     GLCall(glDrawElements(GL_TRIANGLES,
                           renderer->quadData.nextQuadIndex *
                               SPRITZ_RENDERER_NUM_INDICES_PER_QUAD,
@@ -322,9 +330,50 @@ bool spritzGraphicsAPIGLBegin(void* apiData, SpritzCamera_t camera) {
 
 bool spritzGraphicsAPIGLEnd(void* apiData) { return true; }
 
-bool spritzGraphicsAPIGLViewportResize(void *apiData, int offX, int offY, int width, int height) {
-    printf("hereeee\n");
+bool spritzGraphicsAPIGLViewportResize(void* apiData, int offX, int offY,
+                                       int width, int height) {
     GLCall(glViewport(offX, offY, width, height));
+    return true;
+}
+
+bool spritzGraphicsAPIGLLoadTexture(
+    void* apiData, SpritzRendererTextureCreateInfo_t createInfo,
+    SpritzRendererTextureHandle_t* texture) {
+
+    SpritzGLTexture_t* internalTexture = malloc(sizeof(SpritzGLTexture_t));
+    *texture = internalTexture;
+    internalTexture->width = createInfo.width;
+    internalTexture->height = createInfo.height;
+
+    GLCall(glGenTextures(1, &internalTexture->id));
+    GLCall(glBindTexture(GL_TEXTURE_2D, internalTexture->id));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                           GL_NEAREST_MIPMAP_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+
+    GLenum imageType;
+    if(createInfo.imageType == SpritzRendererImageRGB) {
+        imageType = GL_RGB;
+    } else if(createInfo.imageType == SpritzRendererImageRGBA) {
+        imageType = GL_RGBA;
+    } else {
+        fprintf(stderr, "Spritz: failed to create image! Undefined image type!\n");
+        return false;
+    }
+
+    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, imageType, internalTexture->width, internalTexture->height, 0,
+                        imageType, GL_UNSIGNED_BYTE, createInfo.data));
+    GLCall(glGenerateMipmap(GL_TEXTURE_2D));
+
+    return true;
+}
+
+bool spritzGraphicsAPIGLFreeTexture(void *apiData, SpritzRendererTextureHandle_t texture) {
+    SpritzGLTexture_t* internalTexture = texture;
+    GLCall(glDeleteTextures(1, &internalTexture->id));
+
+    free(internalTexture);
+
     return true;
 }
 
@@ -339,6 +388,8 @@ SpritzGraphicsAPIInternal_t spritzGraphicsAPIGLLoad() {
     api.PFN_begin = spritzGraphicsAPIGLBegin;
     api.PFN_end = spritzGraphicsAPIGLEnd;
     api.PFN_viewportResize = spritzGraphicsAPIGLViewportResize;
+    api.PFN_loadTexture = spritzGraphicsAPIGLLoadTexture;
+    api.PFN_freeTexture = spritzGraphicsAPIGLFreeTexture;
 
     api.internalData = malloc(sizeof(SpritzGLInternalData_t));
 

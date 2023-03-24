@@ -7,10 +7,23 @@ typedef struct {
     uint32_t nQuadsPerBatch;
 } SpritzRendererOptions_t;
 
-typedef struct SpritzRendererTexture* SpritzRendererTexture_t;
+typedef enum {
+    SpritzRendererImageRGB = 3,
+    SpritzRendererImageRGBA = 4
+} SpritzRendererImageType;
 
 typedef struct {
-    SpritzRendererTexture_t texture;
+    int width, height;
+    SpritzRendererImageType imageType;
+
+    const uint8_t* data;
+    uint32_t size;
+} SpritzRendererTextureCreateInfo_t;
+
+typedef void* SpritzRendererTextureHandle_t;
+
+typedef struct {
+    SpritzRendererTextureHandle_t texture;
 
     float topLeftX;
     float topLeftY;
