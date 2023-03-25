@@ -143,7 +143,6 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
         iPtr->indices[i] += SPRITZ_RENDERER_NUM_VERTICES_PER_QUAD *
                             renderer->quadData.nextQuadIndex;
     }
-    printf("iptr %d\n", renderer->quadData.nextQuadIndex);
 
     renderer->quadData.nextQuadIndex++;
 }
