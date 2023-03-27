@@ -44,7 +44,8 @@ const char* spritzGlQuadShaderFS =
     "uniform sampler2D samplers[16];\n"
     "\n"
     "void main() {\n"
-    "    oColor = mix(texture(samplers[texIndex], texCoords), color, 1 - texAndColorBlendFactor);\n"
-    "    oColor.a = color.a;"
+    "    vec4 texColor = texture(samplers[texIndex], texCoords);\n"
+    "    oColor = mix(texColor, color, 1 - texAndColorBlendFactor);\n"
+    "    oColor.a = texColor.a == 0.0f ? 0.0f : color.a;"
     "}\n"
     ;

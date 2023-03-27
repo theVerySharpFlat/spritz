@@ -69,6 +69,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
 
     for (uint32_t i = 0; i < renderer->quadData.nextTextureIndex; i++) {
         if (renderer->quadData.textures[i] == quad.texture) {
+            //printf("foundTexture\n");
             foundTextureIndex = i;
         }
     }
@@ -76,6 +77,7 @@ void spritzRendererQueueQuad(SpritzRenderer_t* renderer, SpritzWindow_t window,
     if (foundTextureIndex == renderer->quadData.nextQuadIndex) {
         renderer->quadData.textures[renderer->quadData.nextTextureIndex] = quad.texture;
         renderer->quadData.nextTextureIndex++;
+        // printf("did not find texture\n");
     }
 
     SpritzRendererQuadVertex_t v0 = {.posX = quad.topLeftX,

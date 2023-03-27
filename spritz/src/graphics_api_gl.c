@@ -4,6 +4,7 @@
 #include "graphics_api_internal.h"
 #include "spritz/camera.h"
 #include "spritz/renderer.h"
+#include <OpenGL/OpenGL.h>
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>
@@ -161,11 +162,15 @@ bool spritzGraphicsAPIGLInit(void* apiData, SpritzGraphicsAPIInitInfo_t info) {
          strlen(spritzGlQuadShaderFS)}};
     glData->quadShader.id = spritzCreateShader(source);
 
+    //GLCall(glBlendFunc(GL_BLEND_SRC_ALPHA, GL_BLEND_DST_RGB))
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     return true;
 }
 
 bool spritzGraphicsAPIGLClear(void* apiData) {
-    GLCall(glClear(GL_COLOR_BUFFER_BIT));
+    GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     return true;
 }
 
