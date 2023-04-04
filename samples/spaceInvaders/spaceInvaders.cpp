@@ -15,7 +15,7 @@ int main() {
         .width = (int32_t)WindowConstants::width,
         .height = (int32_t)WindowConstants::height,
         .name = "Spritz!",
-        .apiPreference = SpritzGraphicsAPIGL,
+        .apiPreference = SPRITZ_GRAPHICS_API_GL,
         .rendererOptions = rendererOptions};
 
     SpritzWindow_t window = spritzWindowCreate(createInfo);

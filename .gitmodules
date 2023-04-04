@@ -4,3 +4,6 @@
 [submodule "spritz/third_party/cglm"]
 	path = spritz/third_party/cglm
 	url = https://github.com/recp/cglm.git
+[submodule "spritz/third_party/volk"]
+	path = spritz/third_party/volk
+	url = https://github.com/zeux/volk.git

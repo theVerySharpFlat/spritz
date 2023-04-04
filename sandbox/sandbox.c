@@ -15,7 +15,7 @@ int main() {
     SpritzWindowCreateInfo_t createInfo = {.width = 720,
                                            .height = 540,
 
-                                           .apiPreference = SpritzGraphicsAPIGL,
+                                           .apiPreference = SPRITZ_GRAPHICS_API_VK,
                                            .name = "Spritz!",
 
                                            .rendererOptions = rendererOptions};
@@ -26,6 +26,7 @@ int main() {
                                                  -270.0f};
     SpritzCamera_t camera = spritzCameraCreate(cameraCreateInfo);
 
+    /*
     int width, height, nChannels;
     void* iData =  stbi_load("assets/test.png", &width, &height, &nChannels, 3);
     SpritzRendererTextureHandle_t textureHandle;
@@ -106,5 +107,5 @@ int main() {
         }
 
         frameNumber++;
-    }
+    }*/
 }

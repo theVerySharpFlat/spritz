@@ -20,4 +20,16 @@ add_subdirectory(third_party/glad)
 add_subdirectory(third_party/cglm)
 
 find_package(OpenGL)
+
+if(SPRITZ_ENABLE_VULKAN)
+    # Install the Vulkan SDK from LunarG!!!
+    find_package(Vulkan REQUIRED)
+
+    add_subdirectory(third_party/volk)
+
+    target_link_libraries(spritz PRIVATE volk)
+
+    target_sources(spritz PRIVATE src/graphics_api_vk.c)
+endif()
+
 target_link_libraries(spritz PRIVATE OpenGL::GL glfw glad cglm)

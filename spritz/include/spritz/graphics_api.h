@@ -4,7 +4,8 @@
 typedef struct SpritzGraphicsAPIInternal_t* SpritzGraphicsAPI_t;
 
 enum SpritzGraphicsAPIID {
-    SpritzGraphicsAPIGL = 0
+    SPRITZ_GRAPHICS_API_GL = 0,
+    SPRITZ_GRAPHICS_API_VK
 };
 typedef enum SpritzGraphicsAPIID SpritzGraphicsAPIID_t;
 
