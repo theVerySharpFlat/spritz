@@ -95,7 +95,6 @@ svkGetDebugUtilsMessengerCreateInfo() {
 static bool
 svkSetupDebugMessenger(VkDebugUtilsMessengerEXT* debugUtilsMessenger,
                        const SpritzVKInternal_t* iData) {
-    printf("begin here\n");
     VkDebugUtilsMessengerCreateInfoEXT createInfo =
         svkGetDebugUtilsMessengerCreateInfo();
 
@@ -159,8 +158,6 @@ static bool svkCheckValidationLayerSupport(VkInstance instance) {
             return false;
     }
 
-    printf("down here 1\n");
-
     return true;
 }
 
@@ -191,13 +188,6 @@ static bool svkLoadInstance(VkInstance* instance,
     // because we use MoltenVK on MacOS
     instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
-    printf("here\n");
-
-    printf("nExtensions: %d\n", instanceCreateInfo.enabledExtensionCount);
-    printf("enabled extensions:\n");
-    for (int i = 0; i < instanceCreateInfo.enabledExtensionCount; i++) {
-        printf("\t%s\n", instanceCreateInfo.ppEnabledExtensionNames[i]);
-    }
     if (iData->validationEnabled) {
         instanceCreateInfo.enabledLayerCount = SVK_N_VALIDATION_LAYERS;
         instanceCreateInfo.ppEnabledLayerNames = svkValidationLayers;
@@ -234,16 +224,13 @@ bool spritzGraphicsAPIVKPreWindowSystemInit(void* uData) {
     iData->validationEnabled = true;
 #endif
 
-    printf("right here\n");
     RET_ASRT(svkLoadInstance(&iData->instance, iData), "%s",
              "spritz: failed to create vulkan instance!\n")
     volkLoadInstance(iData->instance);
     if (iData->validationEnabled) {
-        printf("down here0\n");
         RET_ASRT(svkCheckValidationLayerSupport(iData->instance), "%s",
                  "spritz: validation layers requested, but the required don't "
                  "exist!\n")
-        printf("down here1\b");
         RET_ASRT(svkSetupDebugMessenger(&iData->debugMessenger, iData), "%s",
                  "spritz: failed to create debug utils messenger!\n");
     }
