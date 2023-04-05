@@ -34,7 +34,7 @@ void Invader::update(double deltaTime, SpritzWindow_t window) {
         }
 
         timeSinceAnimSwitch =
-            std::fmodf(timeSinceAnimSwitch, msPerIdleAnimFrameSwitch);
+            ::fmodf(timeSinceAnimSwitch, msPerIdleAnimFrameSwitch);
 
         posY += verticalSpeed;
     }

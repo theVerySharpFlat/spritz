@@ -142,7 +142,7 @@ static bool svkCheckValidationLayerSupport(VkInstance instance) {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, NULL);
 
-    VkLayerProperties* layerProperties = alloca(sizeof(VkLayerProperties));
+    VkLayerProperties* layerProperties = alloca(sizeof(VkLayerProperties) * layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, layerProperties);
 
     for (int i = 0; i < SVK_N_VALIDATION_LAYERS; i++) {

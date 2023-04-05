@@ -4,7 +4,6 @@
 #include "graphics_api_internal.h"
 #include "spritz/camera.h"
 #include "spritz/renderer.h"
-#include <OpenGL/OpenGL.h>
 #include <renderer_internal.h>
 #include <spritz/graphics_api.h>
 #include <stdint.h>

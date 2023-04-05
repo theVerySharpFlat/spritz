@@ -3,6 +3,7 @@
 #include "Invader.h"
 #include "WindowConstants.h"
 #include <cstdlib>
+#include <algorithm>
 
 void InvaderManager::spawnLargeInvader(SpritzRendererTextureHandle_t texture,
                                        float x, float y) {
