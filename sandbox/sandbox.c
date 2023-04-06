@@ -26,6 +26,8 @@ int main() {
                                                  -270.0f};
     SpritzCamera_t camera = spritzCameraCreate(cameraCreateInfo);
 
+    spritzWindowDestroy(&window);
+
     /*
     int width, height, nChannels;
     void* iData =  stbi_load("assets/test.png", &width, &height, &nChannels, 3);

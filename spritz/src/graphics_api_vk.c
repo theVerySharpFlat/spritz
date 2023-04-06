@@ -8,10 +8,34 @@
 #include <string.h>
 
 typedef struct {
+    bool hasGraphicsQueue;
+    bool hasPresentQueue;
+    bool hasTransferQueue;
+
+    uint32_t graphicsQueueFamilyIndex;
+    uint32_t transferQueueFamilyIndex;
+} SpritzVKQueueProperties_t;
+
+typedef struct {
+    VkQueue graphicsQueue;
+    VkQueue transferQueue;
+} SpritzVKQueues_t;
+
+typedef struct {
+    VkPhysicalDevice physicalDevice;
+    VkDevice device;
+
+    SpritzVKQueueProperties_t queueProperties;
+    SpritzVKQueues_t queues;
+} SpritzVKDeviceData_t;
+
+typedef struct {
     VkInstance instance;
 
     bool validationEnabled;
     VkDebugUtilsMessengerEXT debugMessenger;
+
+    SpritzVKDeviceData_t deviceData;
 } SpritzVKInternal_t;
 
 #define UDATA_INIT SpritzVKInternal_t* iData = uData
@@ -141,7 +165,8 @@ static bool svkCheckValidationLayerSupport(VkInstance instance) {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, NULL);
 
-    VkLayerProperties* layerProperties = alloca(sizeof(VkLayerProperties) * layerCount);
+    VkLayerProperties* layerProperties =
+        alloca(sizeof(VkLayerProperties) * layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, layerProperties);
 
     for (int i = 0; i < SVK_N_VALIDATION_LAYERS; i++) {
@@ -207,6 +232,128 @@ static bool svkLoadInstance(VkInstance* instance,
     return true;
 }
 
+static SpritzVKQueueProperties_t
+svkGetPhysicalDeviceQueues(VkPhysicalDevice physicalDevice,
+                           const SpritzVKInternal_t* iData) {
+    SpritzVKQueueProperties_t queueProperties = {};
+
+    uint32_t nPropertiesCount;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &nPropertiesCount,
+                                             NULL);
+
+    VkQueueFamilyProperties queueFamilyProperties[nPropertiesCount];
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &nPropertiesCount,
+                                             queueFamilyProperties);
+
+    for (uint32_t i = 0; i < nPropertiesCount; i++) {
+        if (!queueProperties.hasGraphicsQueue &&
+            queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            queueProperties.graphicsQueueFamilyIndex = i;
+            queueProperties.hasGraphicsQueue = true;
+        }
+
+        if (!queueProperties.hasTransferQueue &&
+            queueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            queueProperties.transferQueueFamilyIndex = i;
+            queueProperties.hasTransferQueue = true;
+        }
+    }
+
+    return queueProperties;
+}
+
+static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
+                                   const SpritzVKInternal_t* iData) {
+    uint32_t nPhysicalDevices;
+    vkEnumeratePhysicalDevices(iData->instance, &nPhysicalDevices, NULL);
+
+    VkPhysicalDevice* physicalDevices =
+        alloca(sizeof(VkPhysicalDevice) * nPhysicalDevices);
+    vkEnumeratePhysicalDevices(iData->instance, &nPhysicalDevices,
+                               physicalDevices);
+
+    VkPhysicalDevice pickedPhysicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDeviceType pickedPhysicalDeviceType;
+
+    for (int i = 0; i < nPhysicalDevices; i++) {
+        SpritzVKQueueProperties_t queueProperties =
+            svkGetPhysicalDeviceQueues(physicalDevices[i], iData);
+
+        if (!queueProperties.hasGraphicsQueue ||
+            !queueProperties.hasTransferQueue) {
+            continue;
+        }
+
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(physicalDevices[i], &properties);
+
+        if (pickedPhysicalDevice == VK_NULL_HANDLE) {
+            pickedPhysicalDevice = physicalDevices[i];
+            properties.deviceType = properties.deviceType;
+        }
+
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            pickedPhysicalDevice = physicalDevices[i];
+            pickedPhysicalDeviceType = properties.deviceType;
+        }
+    }
+
+    if (pickedPhysicalDevice == VK_NULL_HANDLE) {
+        printf("failed to find suitable device!\n");
+        return false;
+    }
+
+    deviceData->physicalDevice = pickedPhysicalDevice;
+    deviceData->queueProperties =
+        svkGetPhysicalDeviceQueues(pickedPhysicalDevice, iData);
+
+    float maxQueuePriority = 1.0f;
+
+    VkDeviceQueueCreateInfo graphicsQueueCreateInfo = {};
+    graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    graphicsQueueCreateInfo.queueFamilyIndex =
+        deviceData->queueProperties.graphicsQueueFamilyIndex;
+    graphicsQueueCreateInfo.queueCount = 1;
+    graphicsQueueCreateInfo.pQueuePriorities = &maxQueuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+
+    VkDeviceCreateInfo deviceCreateInfo = {};
+    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.queueCreateInfoCount = 1;
+    deviceCreateInfo.pQueueCreateInfos = &graphicsQueueCreateInfo;
+    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+    deviceCreateInfo.ppEnabledLayerNames = svkValidationLayers;
+    deviceCreateInfo.enabledLayerCount = SVK_N_VALIDATION_LAYERS;
+
+#ifdef __APPLE__
+    const char* extensions[1];
+    extensions[0] = "VK_KHR_portability_subset";
+    deviceCreateInfo.enabledExtensionCount = 1;
+    deviceCreateInfo.ppEnabledExtensionNames = extensions;
+#else
+    deviceCreateInfo.enabledExtensionCount = 0;
+#endif
+
+    if (vkCreateDevice(iData->deviceData.physicalDevice, &deviceCreateInfo,
+                       NULL, &deviceData->device) != VK_SUCCESS) {
+        printf("spritz: failed to create Vulkan device!\n");
+        return false;
+    }
+
+    volkLoadDevice(iData->deviceData.device);
+
+    vkGetDeviceQueue(iData->deviceData.device,
+                     iData->deviceData.queueProperties.graphicsQueueFamilyIndex,
+                     0, &deviceData->queues.graphicsQueue);
+
+    return true;
+}
+
+static void svkDestroyDevice(SpritzVKDeviceData_t* deviceData) {
+    vkDestroyDevice(deviceData->device, NULL);
+}
+
 static bool volkInitialized = false;
 bool spritzGraphicsAPIVKPreWindowSystemInit(void* uData) {
     UDATA_INIT;
@@ -235,10 +382,24 @@ bool spritzGraphicsAPIVKPreWindowSystemInit(void* uData) {
                  "spritz: failed to create debug utils messenger!\n");
     }
 
+    RET_ASRT(svkLoadDeviceAndQueues(&iData->deviceData, iData), "%s",
+             "spritz: failed to load vulkan device and queues!");
+
     return true;
 }
 
 bool spritzGraphicsAPIVKInit(void* data, SpritzGraphicsAPIInitInfo_t initInfo) {
+    return true;
+}
+
+bool spritzGraphicsAPIVKShutdown(void* uData) {
+    UDATA_INIT;
+
+    svkDestroyDevice(&iData->deviceData);
+
+    svkDestroyDebugUtilsMessenger(iData);
+    vkDestroyInstance(iData->instance, NULL);
+
     return true;
 }
 
@@ -249,6 +410,8 @@ SpritzGraphicsAPIInternal_t spritzGraphicsAPIVKLoad() {
 
     api.PFN_preInit = spritzGraphicsAPIVKPreWindowSystemInit;
     api.PFN_init = spritzGraphicsAPIVKInit;
+
+    api.PFN_shutdown = spritzGraphicsAPIVKShutdown;
 
     return api;
 }

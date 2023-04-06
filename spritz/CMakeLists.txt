@@ -15,6 +15,8 @@ add_library(spritz ${SPRITZ_SOURCES})
 target_include_directories(spritz PUBLIC include)
 target_include_directories(spritz PRIVATE src)
 
+target_compile_features(spritz PUBLIC c_std_99)
+
 add_subdirectory(third_party/glfw)
 add_subdirectory(third_party/glad)
 add_subdirectory(third_party/cglm)

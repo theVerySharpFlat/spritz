@@ -86,7 +86,6 @@ SpritzWindow_t spritzWindowCreate(SpritzWindowCreateInfo_t createInfo) {
 
     GLFWwindow* nativeWindow = glfwCreateWindow(
         createInfo.width, createInfo.height, createInfo.name, NULL, NULL);
-    glfwMakeContextCurrent(nativeWindow);
 
     window->window = nativeWindow;
     window->graphicsAPI = graphicsAPI;
