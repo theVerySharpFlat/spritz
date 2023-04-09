@@ -48,8 +48,13 @@ typedef struct {
 
     VkSwapchainKHR swapchain;
 
-    SpritzWindow_t window;
+    VkImage* images;
+    VkImageView* imageViews;
+    uint32_t imageCount;
 
+    VkFormat imageFormat;
+
+    SpritzWindow_t window;
 } SpritzVKPresentData_t;
 
 typedef struct {
@@ -616,15 +621,54 @@ static bool svkInitPresentation(SpritzVKPresentData_t* presentData,
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
     if (vkCreateSwapchainKHR(iData->deviceData.device, &swapchainCreateInfo,
-                             NULL, &presentData->swapchain)) {
+                             NULL, &(presentData->swapchain)) != VK_SUCCESS) {
         printf("spritz: failed to create Vulkan swapchain!\n");
         return false;
+    }
+
+    presentData->imageFormat = swapchainCreateInfo.imageFormat;
+
+    vkGetSwapchainImagesKHR(iData->deviceData.device, presentData->swapchain,
+                            &presentData->imageCount, NULL);
+    presentData->images = malloc(sizeof(VkImage) * presentData->imageCount);
+    presentData->imageViews =
+        malloc(sizeof(VkImageView) * presentData->imageCount);
+    vkGetSwapchainImagesKHR(iData->deviceData.device, presentData->swapchain,
+                            &presentData->imageCount, presentData->images);
+
+    for (uint32_t i = 0; i < presentData->imageCount; i++) {
+        VkImageViewCreateInfo imageViewCreateInfo = {};
+        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imageViewCreateInfo.image = presentData->images[i];
+        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        imageViewCreateInfo.format = presentData->imageFormat;
+        imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewCreateInfo.subresourceRange.aspectMask =
+            VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+        imageViewCreateInfo.subresourceRange.layerCount = 1;
+        imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+        imageViewCreateInfo.subresourceRange.levelCount = 1;
+
+        vkCreateImageView(iData->deviceData.device, &imageViewCreateInfo, NULL,
+                          presentData->imageViews + i);
     }
 
     return true;
 }
 
 static bool svkDestroySwapchain(SpritzVKInternal_t* iData) {
+    for (uint32_t i = 0; i < iData->presentData.imageCount; i++) {
+        vkDestroyImageView(iData->deviceData.device,
+                           iData->presentData.imageViews[i], NULL);
+    }
+
+    free(iData->presentData.images);
+    free(iData->presentData.imageViews);
+    iData->presentData.imageCount = 0;
 
     vkDestroySwapchainKHR(iData->deviceData.device,
                           iData->presentData.swapchain, NULL);
