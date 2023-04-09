@@ -1,11 +1,23 @@
 #include "graphics_api_vk.h"
+#include "spritz/window.h"
+#include "window_internal.h"
 
 #include "GLFW/glfw3.h"
 
+#include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
+#include <stdlib.h>
 #include <string.h>
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef clamp
+#define clamp(a, lo, hi) ((a) < (lo) ? lo : ((a) > (hi) ? (hi) : (a)))
+#endif
 
 typedef struct {
     bool hasGraphicsQueue;
@@ -14,11 +26,13 @@ typedef struct {
 
     uint32_t graphicsQueueFamilyIndex;
     uint32_t transferQueueFamilyIndex;
+    uint32_t presentQueueFamilyIndex;
 } SpritzVKQueueProperties_t;
 
 typedef struct {
     VkQueue graphicsQueue;
     VkQueue transferQueue;
+    VkQueue presentQueue;
 } SpritzVKQueues_t;
 
 typedef struct {
@@ -30,17 +44,28 @@ typedef struct {
 } SpritzVKDeviceData_t;
 
 typedef struct {
+    VkSurfaceKHR surface;
+
+    VkSwapchainKHR swapchain;
+
+    SpritzWindow_t window;
+
+} SpritzVKPresentData_t;
+
+typedef struct {
     VkInstance instance;
 
     bool validationEnabled;
     VkDebugUtilsMessengerEXT debugMessenger;
 
     SpritzVKDeviceData_t deviceData;
+
+    SpritzVKPresentData_t presentData;
 } SpritzVKInternal_t;
 
 #define UDATA_INIT SpritzVKInternal_t* iData = uData
 #define RET_ASRT(x, fmt, ...)                                                  \
-    if (!x) {                                                                  \
+    if (!(x)) {                                                                \
         printf(fmt, __VA_ARGS__);                                              \
         return false;                                                          \
     }
@@ -52,7 +77,7 @@ typedef struct {
 } ExtensionsInfo_t;
 
 static ExtensionsInfo_t
-svkGetRequiredExtensions(const SpritzVKInternal_t* iData) {
+svkGetRequiredInstanceExtensions(const SpritzVKInternal_t* iData) {
     ExtensionsInfo_t info = {};
     uint32_t currentExtensionIndex = 0;
 
@@ -79,6 +104,31 @@ svkGetRequiredExtensions(const SpritzVKInternal_t* iData) {
     if (iData->validationEnabled) {
         SET_EXTENSION(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
+
+#undef SET_EXTENSION
+
+    info.count = currentExtensionIndex;
+    return info;
+}
+
+static ExtensionsInfo_t
+svkGetRequiredDeviceExtensions(const SpritzVKInternal_t* iData) {
+    ExtensionsInfo_t info = {};
+    uint32_t currentExtensionIndex = 0;
+
+#define SET_EXTENSION(x)                                                       \
+    if (currentExtensionIndex >= MAX_EXTENSIONS) {                             \
+        printf("spritz: Too many Vulkan extensions!\n");                       \
+    } else {                                                                   \
+        info.extensions[currentExtensionIndex++] = x;                          \
+    }
+
+#ifdef __APPLE__
+    // macOS uses MoltenVK which needs the portability extensions
+    SET_EXTENSION("VK_KHR_portability_subset");
+#endif
+
+    SET_EXTENSION(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 #undef SET_EXTENSION
 
@@ -200,7 +250,7 @@ static bool svkLoadInstance(VkInstance* instance,
     const char** glfwExtensions =
         glfwGetRequiredInstanceExtensions(&nGLFWExtensions);
 
-    ExtensionsInfo_t properties = svkGetRequiredExtensions(iData);
+    ExtensionsInfo_t properties = svkGetRequiredInstanceExtensions(iData);
 
     VkInstanceCreateInfo instanceCreateInfo = {};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -257,9 +307,47 @@ svkGetPhysicalDeviceQueues(VkPhysicalDevice physicalDevice,
             queueProperties.transferQueueFamilyIndex = i;
             queueProperties.hasTransferQueue = true;
         }
+
+        if (glfwGetPhysicalDevicePresentationSupport(iData->instance,
+                                                     physicalDevice, i)) {
+            queueProperties.presentQueueFamilyIndex = i;
+            queueProperties.hasPresentQueue = true;
+        }
     }
 
     return queueProperties;
+}
+
+static bool
+svkConfirmPhysicalDeviceExtensionSupport(VkPhysicalDevice device,
+                                         const SpritzVKInternal_t* iData) {
+    ExtensionsInfo_t requiredExtensions = svkGetRequiredDeviceExtensions(iData);
+
+    uint32_t supportedDeviceExtensionCount;
+    vkEnumerateDeviceExtensionProperties(device, NULL,
+                                         &supportedDeviceExtensionCount, NULL);
+
+    VkExtensionProperties supportedExtensions[supportedDeviceExtensionCount];
+    vkEnumerateDeviceExtensionProperties(
+        device, NULL, &supportedDeviceExtensionCount, supportedExtensions);
+
+    for (int i = 0; i < requiredExtensions.count; i++) {
+        bool supportsExtension = false;
+        const char* extensionName = requiredExtensions.extensions[i];
+        for (int j = 0; j < supportedDeviceExtensionCount; j++) {
+            if (strcmp(extensionName, supportedExtensions[j].extensionName) ==
+                0) {
+                supportsExtension = true;
+                break;
+            }
+        }
+
+        if (!supportsExtension) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
@@ -280,7 +368,13 @@ static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
             svkGetPhysicalDeviceQueues(physicalDevices[i], iData);
 
         if (!queueProperties.hasGraphicsQueue ||
-            !queueProperties.hasTransferQueue) {
+            !queueProperties.hasTransferQueue ||
+            !queueProperties.hasPresentQueue) {
+            continue;
+        }
+
+        if (!svkConfirmPhysicalDeviceExtensionSupport(physicalDevices[i],
+                                                      iData)) {
             continue;
         }
 
@@ -299,7 +393,7 @@ static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
     }
 
     if (pickedPhysicalDevice == VK_NULL_HANDLE) {
-        printf("failed to find suitable device!\n");
+        printf("spritz: failed to find suitable device!\n");
         return false;
     }
 
@@ -316,24 +410,37 @@ static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
     graphicsQueueCreateInfo.queueCount = 1;
     graphicsQueueCreateInfo.pQueuePriorities = &maxQueuePriority;
 
+    VkDeviceQueueCreateInfo presentQueueCreateInfo = {};
+    presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    presentQueueCreateInfo.queueFamilyIndex =
+        deviceData->queueProperties.presentQueueFamilyIndex;
+    presentQueueCreateInfo.queueCount = 1;
+    presentQueueCreateInfo.pQueuePriorities = &maxQueuePriority;
+
+    VkDeviceQueueCreateInfo queueCreateInfos[2] = {graphicsQueueCreateInfo,
+                                                   presentQueueCreateInfo};
+
+    uint32_t queueCount =
+        deviceData->queueProperties.graphicsQueueFamilyIndex ==
+                deviceData->queueProperties.presentQueueFamilyIndex
+            ? 1
+            : 2;
+
     VkPhysicalDeviceFeatures deviceFeatures = {};
+
+    ExtensionsInfo_t deviceExtensionInfo =
+        svkGetRequiredDeviceExtensions(iData);
 
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pQueueCreateInfos = &graphicsQueueCreateInfo;
+    deviceCreateInfo.queueCreateInfoCount = queueCount;
+    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
     deviceCreateInfo.ppEnabledLayerNames = svkValidationLayers;
     deviceCreateInfo.enabledLayerCount = SVK_N_VALIDATION_LAYERS;
-
-#ifdef __APPLE__
-    const char* extensions[1];
-    extensions[0] = "VK_KHR_portability_subset";
-    deviceCreateInfo.enabledExtensionCount = 1;
-    deviceCreateInfo.ppEnabledExtensionNames = extensions;
-#else
-    deviceCreateInfo.enabledExtensionCount = 0;
-#endif
+    deviceCreateInfo.enabledExtensionCount = deviceExtensionInfo.count;
+    deviceCreateInfo.ppEnabledExtensionNames =
+        (const char**)deviceExtensionInfo.extensions;
 
     if (vkCreateDevice(iData->deviceData.physicalDevice, &deviceCreateInfo,
                        NULL, &deviceData->device) != VK_SUCCESS) {
@@ -346,6 +453,10 @@ static bool svkLoadDeviceAndQueues(SpritzVKDeviceData_t* deviceData,
     vkGetDeviceQueue(iData->deviceData.device,
                      iData->deviceData.queueProperties.graphicsQueueFamilyIndex,
                      0, &deviceData->queues.graphicsQueue);
+
+    vkGetDeviceQueue(iData->deviceData.device,
+                     iData->deviceData.queueProperties.presentQueueFamilyIndex,
+                     0, &deviceData->queues.presentQueue);
 
     return true;
 }
@@ -382,20 +493,171 @@ bool spritzGraphicsAPIVKPreWindowSystemInit(void* uData) {
                  "spritz: failed to create debug utils messenger!\n");
     }
 
-    RET_ASRT(svkLoadDeviceAndQueues(&iData->deviceData, iData), "%s",
-             "spritz: failed to load vulkan device and queues!");
+    return true;
+}
+
+static int svkChooseSwapchainImageCount(
+    const VkSurfaceCapabilitiesKHR* surfaceCapabilities) {
+    uint32_t imageCount = surfaceCapabilities->minImageCount + 1;
+
+    if (surfaceCapabilities->maxImageCount != 0)
+        imageCount = min(imageCount, surfaceCapabilities->maxImageCount);
+
+    return imageCount;
+}
+
+static VkSurfaceFormatKHR
+svkChooseSwapchainSurfaceFormat(const SpritzVKInternal_t* iData) {
+    uint32_t nFormats;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(iData->deviceData.physicalDevice,
+                                         iData->presentData.surface, &nFormats,
+                                         NULL);
+
+    VkSurfaceFormatKHR surfaceFormats[nFormats];
+    vkGetPhysicalDeviceSurfaceFormatsKHR(iData->deviceData.physicalDevice,
+                                         iData->presentData.surface, &nFormats,
+                                         surfaceFormats);
+
+    for (uint32_t i = 0; i < nFormats; i++) {
+        if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
+            surfaceFormats[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) {
+            printf("spritz: Found preferred Vulkan surface format!\n");
+            return surfaceFormats[i];
+        }
+    }
+
+    return surfaceFormats[0];
+}
+
+static VkPresentModeKHR
+svkChooseSwapchainPresentMode(const SpritzVKInternal_t* iData) {
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(iData->deviceData.physicalDevice,
+                                              iData->presentData.surface,
+                                              &presentModeCount, NULL);
+
+    VkPresentModeKHR presentModes[presentModeCount];
+    vkGetPhysicalDeviceSurfacePresentModesKHR(iData->deviceData.physicalDevice,
+                                              iData->presentData.surface,
+                                              &presentModeCount, presentModes);
+
+    for (uint32_t i = 0; i < presentModeCount; i++) {
+        if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            printf("Found preferred present mode!\n");
+            return VK_PRESENT_MODE_MAILBOX_KHR;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+static VkExtent2D
+svkChooseSwapchainExtent(const VkSurfaceCapabilitiesKHR* surfaceCapabilities,
+                         const SpritzVKInternal_t* iData) {
+    if (surfaceCapabilities->currentExtent.width != UINT32_MAX) {
+        return surfaceCapabilities->currentExtent;
+    }
+
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(iData->presentData.window->window, &fbWidth,
+                           &fbHeight);
+
+    VkExtent2D windowExtent = {fbWidth, fbHeight};
+
+    windowExtent.width =
+        clamp(windowExtent.width, surfaceCapabilities->minImageExtent.width,
+              surfaceCapabilities->maxImageExtent.width);
+    windowExtent.height =
+        clamp(windowExtent.height, surfaceCapabilities->minImageExtent.height,
+              surfaceCapabilities->maxImageExtent.height);
+
+    return windowExtent;
+}
+
+static bool svkInitPresentation(SpritzVKPresentData_t* presentData,
+                                const SpritzVKInternal_t* iData) {
+
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(iData->deviceData.physicalDevice,
+                                              iData->presentData.surface,
+                                              &surfaceCapabilities);
+
+    VkSurfaceFormatKHR surfaceFormat = svkChooseSwapchainSurfaceFormat(iData);
+
+    bool samePresentAsGraphicsQueue =
+        iData->deviceData.queueProperties.graphicsQueueFamilyIndex ==
+        iData->deviceData.queueProperties.presentQueueFamilyIndex;
+
+    uint32_t queueFamilyIndexCount = samePresentAsGraphicsQueue ? 1 : 2;
+    const uint32_t queueFamilyIndices[] = {
+        iData->deviceData.queueProperties.graphicsQueueFamilyIndex,
+        iData->deviceData.queueProperties.presentQueueFamilyIndex};
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainCreateInfo.surface = iData->presentData.surface;
+    swapchainCreateInfo.minImageCount =
+        svkChooseSwapchainImageCount(&surfaceCapabilities);
+    swapchainCreateInfo.imageFormat = surfaceFormat.format;
+    swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+    swapchainCreateInfo.imageExtent =
+        svkChooseSwapchainExtent(&surfaceCapabilities, iData);
+    swapchainCreateInfo.imageArrayLayers = 1;
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainCreateInfo.imageSharingMode = samePresentAsGraphicsQueue
+                                               ? VK_SHARING_MODE_EXCLUSIVE
+                                               : VK_SHARING_MODE_CONCURRENT;
+    swapchainCreateInfo.queueFamilyIndexCount = queueFamilyIndexCount;
+    swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+    swapchainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
+    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchainCreateInfo.presentMode = svkChooseSwapchainPresentMode(iData);
+    swapchainCreateInfo.clipped = VK_TRUE;
+    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(iData->deviceData.device, &swapchainCreateInfo,
+                             NULL, &presentData->swapchain)) {
+        printf("spritz: failed to create Vulkan swapchain!\n");
+        return false;
+    }
 
     return true;
 }
 
-bool spritzGraphicsAPIVKInit(void* data, SpritzGraphicsAPIInitInfo_t initInfo) {
+static bool svkDestroySwapchain(SpritzVKInternal_t* iData) {
+
+    vkDestroySwapchainKHR(iData->deviceData.device,
+                          iData->presentData.swapchain, NULL);
+
+    return true;
+}
+
+bool spritzGraphicsAPIVKInit(void* uData,
+                             SpritzGraphicsAPIInitInfo_t initInfo) {
+    UDATA_INIT;
+
+    iData->presentData.window = initInfo.window;
+
+    RET_ASRT(glfwCreateWindowSurface(iData->instance, initInfo.window->window,
+                                     NULL,
+                                     &iData->presentData.surface) == VK_SUCCESS,
+             "%s", "spritz: failed to create window surface!\n");
+
+    RET_ASRT(svkLoadDeviceAndQueues(&iData->deviceData, iData), "%s",
+             "spritz: failed to load vulkan device and queues!\n");
+
+    RET_ASRT(svkInitPresentation(&iData->presentData, iData), "%s",
+             "spritz: failed to initialize presentation!\n");
     return true;
 }
 
 bool spritzGraphicsAPIVKShutdown(void* uData) {
     UDATA_INIT;
 
+    svkDestroySwapchain(iData);
+
     svkDestroyDevice(&iData->deviceData);
+    vkDestroySurfaceKHR(iData->instance, iData->presentData.surface, NULL);
 
     svkDestroyDebugUtilsMessenger(iData);
     vkDestroyInstance(iData->instance, NULL);
