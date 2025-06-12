@@ -6,6 +6,7 @@
 #include "spritz/window.h"
 #include "stb_image.h"
 #include <iostream>
+#include <ctime>
 
 int main() {
     std::srand(std::time(nullptr));
