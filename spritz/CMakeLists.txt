@@ -29,7 +29,7 @@ if(SPRITZ_ENABLE_VULKAN)
 
     add_subdirectory(third_party/volk)
 
-    target_link_libraries(spritz PRIVATE volk)
+    target_link_libraries(spritz PRIVATE volk::volk)
 
     target_sources(spritz PRIVATE src/graphics_api_vk.c)
 endif()

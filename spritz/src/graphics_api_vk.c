@@ -1,12 +1,14 @@
 #include "graphics_api_vk.h"
+
+#define VK_NO_PROTOTYPES
+#include <volk.h>
+#include "GLFW/glfw3.h"
+
 #include "spritz/window.h"
 #include "window_internal.h"
 
-#include "GLFW/glfw3.h"
-
 #include <stdint.h>
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
+// #include <vulkan/vulkan_core.h>
 
 #include <stdlib.h>
 #include <string.h>
